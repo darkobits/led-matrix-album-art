@@ -7,12 +7,22 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
+    "build": "nr build",
+    "start": "sudo nodemon dist/index.js",
     "help": "nr --scripts"
   },
   "dependencies": {
-    "rpi-led-matrix": "^1.14.0"
+    "@darkobits/log": "^2.0.0-beta.16",
+    "@darkobits/sleep": "^3.0.0",
+    "axios": "^1.5.1",
+    "execa": "^8.0.1",
+    "jimp": "^0.22.10",
+    "rpi-led-matrix": "^1.14.0",
+    "tempy": "^3.1.0"
   },
   "devDependencies": {
-    "@darkobits/ts": "^0.18.10"
+    "@darkobits/ts": "^0.18.10",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1"
   }
 }
