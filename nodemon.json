@@ -1,3 +1,5 @@
 {
-  "signal": "SIGINT"
+  "verbose": false,
+  "quiet": true,
+  "delay": 1
 }

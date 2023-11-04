@@ -12,16 +12,27 @@
     "help": "nr --scripts"
   },
   "dependencies": {
+    "@darkobits/adeiu": "^0.4.0",
+    "@darkobits/env": "^2.0.0",
     "@darkobits/log": "^2.0.0-beta.16",
+    "@darkobits/serverless-kit": "^0.2.2",
     "@darkobits/sleep": "^3.0.0",
-    "axios": "^1.5.1",
+    "axios": "^1.6.0",
+    "conf": "^12.0.0",
+    "devcert": "^1.2.2",
+    "dotenv": "^16.3.1",
     "execa": "^8.0.1",
+    "fastify": "^4.24.3",
     "jimp": "^0.22.10",
+    "ramda": "^0.29.1",
     "rpi-led-matrix": "^1.14.0",
+    "spotify-web-api-node": "^5.0.2",
     "tempy": "^3.1.0"
   },
   "devDependencies": {
-    "@darkobits/ts": "^0.18.10",
+    "@darkobits/ts": "^0.18.11",
+    "@types/ramda": "^0.29.7",
+    "@types/spotify-web-api-node": "^5.0.9",
     "nodemon": "^3.0.1",
     "ts-node": "^10.9.1"
   }

@@ -80,3 +80,20 @@ export async function imageToBuffer({ src, width, height }: ImageToBufferOptions
 
   return Buffer.of(...rgbArray);
 }
+
+
+/**
+ * Accepts an integer representing a number of seconds in the future and returns
+ * a UNIX timestamp representing that point in time.
+ */
+export function expiresInToUnixTimestamp(expiresIn: number) {
+  return Date.now() + expiresIn * 1000;
+}
+
+
+/**
+ * Returns a comma-delimited list of all artists for a given Spotify track.
+ */
+export function getArtistNames(item?: SpotifyApi.TrackObjectFull) {
+  return item?.artists?.map(artist => artist.name).join(', ');
+}
