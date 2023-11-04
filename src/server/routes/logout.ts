@@ -1,7 +1,10 @@
 import { CONFIG_KEYS } from 'etc/constants';
 import config from 'lib/config';
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type {
+  FastifyRequest,
+  FastifyReply
+} from 'fastify';
 
 
 /**

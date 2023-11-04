@@ -15,34 +15,35 @@ import { startServer } from 'server';
  *   user.
  */
 async function main() {
-  console.log();
-  dotenv.config();
+  try {
+    console.log();
+    dotenv.config();
 
-  await startServer({
-    hostname: env('HOSTNAME', true),
-    port: env('PORT', true)
-  });
+    await startServer({
+      hostname: env('HOSTNAME', true),
+      port: env('PORT', true)
+    });
 
-  // If a user has not authenticated yet, wait to initialize the LED matrix.
-  if (!config.has(CONFIG_KEYS.SPOTIFY_USER)) {
-    log.info(log.prefix('main'), log.chalk.dim('Waiting for user authentication.'));
-    await pWaitFor(() => config.has(CONFIG_KEYS.SPOTIFY_USER));
+    // If a user has not authenticated yet, wait to initialize the LED matrix.
+    if (!config.has(CONFIG_KEYS.SPOTIFY_USER)) {
+      log.info(log.prefix('main'), log.chalk.dim('Waiting for user authentication.'));
+      await pWaitFor(() => config.has(CONFIG_KEYS.SPOTIFY_USER));
+    }
+
+    const email = config.get(CONFIG_KEYS.SPOTIFY_USER)?.email;
+    log.info(log.prefix('main'), `Logged in as: ${log.chalk.green(email)}`);
+
+    // TODO: Display a test image on the LED matrix at startup.
+
+    // Start the LED matrix, but only if there is a user logged in.
+
+    // matrix.clear();
+
+    log.info(log.prefix('main'), 'Ready.');
+  } catch (err: any) {
+    log.error(err);
+    throw err;
   }
-
-  const email = config.get(CONFIG_KEYS.SPOTIFY_USER)?.email;
-  log.info(log.prefix('main'), `Logged in as: ${log.chalk.green(email)}`);
-
-  // Start the LED matrix, but only if there is a user logged in.
-  // try {
-  //   const matrix = getMatrix();
-  //   matrix.clear();
-  // } catch (err: any) {
-  //   log.error(log.prefix('matrix'), 'Error initializing LED matrix', err);
-  //   if (err.cause) log.error(log.prefix('matrix'), 'Cause:', err.cause);
-  //   throw err;
-  // }
-
-  log.info(log.prefix('main'), 'Ready.');
 }
 
 

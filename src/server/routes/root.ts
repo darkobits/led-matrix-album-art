@@ -5,7 +5,10 @@ import config from 'lib/config';
 import { getSpotifyClient } from 'lib/spotify-client';
 import { getArtistNames } from 'lib/utils';
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type {
+  FastifyRequest,
+  FastifyReply
+} from 'fastify';
 
 
 /**
@@ -20,8 +23,6 @@ export async function rootHandler(request: FastifyRequest, reply: FastifyReply) 
     const nowPlaying = (await spotifyClient.getMyCurrentPlayingTrack()).body;
     const item = nowPlaying.item as SpotifyApi.TrackObjectFull | undefined;
     const largestImage = R.last(R.sortBy(R.propOr(0, 'height'), item?.album?.images ?? []));
-
-    console.log('now playing', nowPlaying);
 
     return {
       user: currentUser.email,

@@ -14,9 +14,17 @@ import config from 'lib/config';
 import { getSpotifyClient } from 'lib/spotify-client';
 import { expiresInToUnixTimestamp } from 'lib/utils';
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type {
+  FastifyRequest,
+  FastifyReply,
+  FastifySchema
+} from 'fastify';
 
 
+/**
+ * TODO: Use a type provider like type-box to generate this type from the JSON
+ * schema below.
+ */
 type LoginRequest = FastifyRequest<{
   Querystring: {
     redirectTo?: string;
@@ -121,3 +129,20 @@ export async function loginHandler(request: LoginRequest, reply: FastifyReply) {
 
   throw new httpError.InternalServerError(`Handler "auth" received unknown path: ${path}`);
 }
+
+
+/**
+ * JSON schema for this handler.
+ */
+loginHandler.schema = {
+  querystring: {
+    type: 'object',
+    properties: {
+      redirectTo: { type: 'string' },
+      code: { type: 'string' },
+      error: { type: 'string' },
+      state: { type: 'string' }
+    },
+    additionalProperties: false
+  }
+} as FastifySchema;

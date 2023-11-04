@@ -7,6 +7,7 @@ import {
   OAUTH_CALLBACK_ROUTE
 } from 'etc/constants';
 import log from 'lib/log';
+import { configHandler } from 'server/routes/config';
 import { loginHandler } from 'server/routes/login';
 import { logoutHandler } from 'server/routes/logout';
 import { rootHandler } from 'server/routes/root';
@@ -51,17 +52,26 @@ export async function startServer(opts: StartServerOptions) {
   const https = await devcert.certificateFor(hostname);
 
   // Create our server instance using the self-signed certificates we generated.
-  const server = Fastify({ https });
+  const server = Fastify({
+    https,
+    ajv: {
+      customOptions: {
+        useDefaults: true,
+        removeAdditional: false
+      }
+    }
+  });
 
   // Register route handlers.
   server.get('/', rootHandler);
-  server.get(OAUTH_LOGIN_ROUTE, loginHandler);
-  server.get(OAUTH_CALLBACK_ROUTE, loginHandler);
+  server.get(OAUTH_LOGIN_ROUTE, { schema: loginHandler.schema }, loginHandler);
+  server.get(OAUTH_CALLBACK_ROUTE, { schema: loginHandler.schema }, loginHandler);
   server.get('/logout', logoutHandler);
+  server.post('/config', { schema: configHandler.schema }, configHandler);
 
   // Register a shutdown handler.
   adeiu(async signal => {
-    log.info(prefix, `Got signal ${signal}; stopping server.`);
+    log.info(prefix, `Got signal ${log.chalk.yellow(signal)}; stopping server.`);
     await server.close();
   });
 
@@ -70,8 +80,7 @@ export async function startServer(opts: StartServerOptions) {
     await server.listen({ port });
     log.info(prefix, `Listening on: ${log.chalk.blue(`https://${hostname}:${port}`)}`);
     return await server;
-  } catch (err) {
-    server.log.error(err);
-    throw err;
+  } catch (err: any) {
+    throw new Error(log.chalk.red.bold(`Error starting server: ${err.message}`), { cause: err });
   }
 }
