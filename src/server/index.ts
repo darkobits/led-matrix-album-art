@@ -8,8 +8,8 @@ import {
 } from 'etc/constants';
 import log from 'lib/log';
 import { loginHandler } from 'server/routes/login';
-import { rootHandler } from 'server/routes/root';
 import { logoutHandler } from 'server/routes/logout';
+import { rootHandler } from 'server/routes/root';
 
 
 /**

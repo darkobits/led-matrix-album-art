@@ -11,6 +11,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 /**
  * Handles requests to the root route.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function rootHandler(request: FastifyRequest, reply: FastifyReply) {
   const currentUser = config.get(CONFIG_KEYS.SPOTIFY_USER);
 
@@ -26,12 +27,12 @@ export async function rootHandler(request: FastifyRequest, reply: FastifyReply) 
         artist: getArtistNames(item),
         title: item.name,
         image: largestImage?.url
-      } : null
+      } : undefined
     };
   }
 
   return {
-    email: null,
-    nowPlaying: null
+    email: undefined,
+    nowPlaying: undefined
   };
 }

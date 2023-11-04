@@ -3,10 +3,13 @@ import { ts } from '@darkobits/eslint-plugin';
 export default [
   ...ts,
   {
-    globals: {
-      'SpotifyApi': 'readonly'
+    languageOptions: {
+      globals: {
+        'SpotifyApi': 'readonly'
+      }
     },
     rules: {
+      'no-console': 'off',
       'unicorn/no-typeof-undefined': 'off'
     }
   }

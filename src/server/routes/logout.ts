@@ -10,5 +10,5 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
  */
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply) {
   config.delete(CONFIG_KEYS.SPOTIFY_USER);
-  reply.redirect('/');
+  await reply.redirect('/');
 }
