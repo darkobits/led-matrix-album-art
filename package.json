@@ -1,14 +1,15 @@
 {
+  "private": true,
   "name": "node-led-matrix-controller",
   "version": "1.0.0",
-  "description": "",
+  "description": "Displays album art from Spotify on an Adafruit (or similar) LED matrix.",
   "author": "darkobits",
   "license": "Hippocratic",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "nr build",
-    "start": "sudo nodemon dist/index.js",
+    "start": "nr start",
     "help": "nr --scripts"
   },
   "dependencies": {
@@ -17,20 +18,18 @@
     "@darkobits/log": "^2.0.0-beta.16",
     "@darkobits/serverless-kit": "^0.2.2",
     "@darkobits/sleep": "^3.0.0",
-    "axios": "^1.6.0",
     "conf": "^12.0.0",
     "devcert": "^1.2.2",
     "dotenv": "^16.3.1",
-    "execa": "^8.0.1",
     "fastify": "^4.24.3",
     "jimp": "^0.22.10",
+    "p-wait-for": "^5.0.2",
     "ramda": "^0.29.1",
     "rpi-led-matrix": "^1.14.0",
-    "spotify-web-api-node": "^5.0.2",
-    "tempy": "^3.1.0"
+    "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
-    "@darkobits/ts": "^0.18.11",
+    "@darkobits/ts": "^0.18.12",
     "@types/ramda": "^0.29.7",
     "@types/spotify-web-api-node": "^5.0.9",
     "nodemon": "^3.0.1",

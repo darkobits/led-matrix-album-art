@@ -17,6 +17,8 @@ export async function doMatrixUpdateLoop() {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
+      // TODO: We might be able to avoid some flickering here by disabling the
+      // call to clear() and just call drawBuffer().
       const imgBuffer = await imageToBuffer({ src, width, height });
       matrix.clear();
       matrix.drawBuffer(imgBuffer);

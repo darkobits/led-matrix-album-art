@@ -18,21 +18,23 @@ export async function rootHandler(request: FastifyRequest, reply: FastifyReply) 
   if (currentUser) {
     const spotifyClient = await getSpotifyClient(currentUser?.email);
     const nowPlaying = (await spotifyClient.getMyCurrentPlayingTrack()).body;
-    const item = nowPlaying.item as SpotifyApi.TrackObjectFull;
+    const item = nowPlaying.item as SpotifyApi.TrackObjectFull | undefined;
     const largestImage = R.last(R.sortBy(R.propOr(0, 'height'), item?.album?.images ?? []));
+
+    console.log('now playing', nowPlaying);
 
     return {
       user: currentUser.email,
-      nowPlaying: nowPlaying ? {
+      nowPlaying: item ? {
         artist: getArtistNames(item),
         title: item.name,
         image: largestImage?.url
-      } : undefined
+      } : false
     };
   }
 
   return {
-    email: undefined,
-    nowPlaying: undefined
+    email: false,
+    nowPlaying: false
   };
 }

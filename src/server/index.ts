@@ -30,8 +30,8 @@ export interface StartServerOptions {
   hostname: string;
 
   /**
-   * The port that the server will listen on. This will be used to construct
-   * redirect URLs for the authorization flow, and must match the URLs
+   * The port that the server will listen on. Additionally, this will be used to
+   * construct redirect URLs for the authorization flow, and must match the URLs
    * registered with the OAuth application in the Spotify Developer Dashboard.
    */
   port: number;
@@ -45,12 +45,12 @@ export async function startServer(opts: StartServerOptions) {
     throw new TypeError(`[startServer] Expected "hostname" to be of type "string", got "${typeof hostname}".`);
 
   if (typeof port !== 'number')
-    throw new TypeError(`[startServer] Expected "port" to be of type "number", got "${typeof hostname}".`);
+    throw new TypeError(`[startServer] Expected "port" to be of type "number", got "${typeof port}".`);
 
   // Generate self-signed certificates for the configured hostname.
   const https = await devcert.certificateFor(hostname);
 
-  // Create our server instance.
+  // Create our server instance using the self-signed certificates we generated.
   const server = Fastify({ https });
 
   // Register route handlers.
@@ -63,13 +63,13 @@ export async function startServer(opts: StartServerOptions) {
   adeiu(async signal => {
     log.info(prefix, `Got signal ${signal}; stopping server.`);
     await server.close();
-    log.info(prefix, 'Done.');
   });
 
-
+  // Start the server.
   try {
     await server.listen({ port });
-    log.info(prefix, `Listening on ${log.chalk.blue(`https://${hostname}:${port}`)}.`);
+    log.info(prefix, `Listening on: ${log.chalk.blue(`https://${hostname}:${port}`)}`);
+    return await server;
   } catch (err) {
     server.log.error(err);
     throw err;
