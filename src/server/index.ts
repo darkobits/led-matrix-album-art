@@ -1,4 +1,3 @@
-import adeiu from '@darkobits/adeiu';
 import devcert from 'devcert';
 import Fastify from 'fastify';
 
@@ -24,9 +23,10 @@ const prefix = log.prefix('server');
 export interface StartServerOptions {
   /**
    * The hostname that the server is expected to run on. This value is not
-   * considered authoritative, but it will be used to construct redirect URLs
-   * for the authorization flow, and must match the URLs registered with the
-   * OAuth application in the Spotify Developer Dashboard.
+   * considered authoritative, but it will be used to (1) generate a self-signed
+   * certificate and (2) construct redirect URLs for the authorization flow, and
+   * must match the URLs registered with the OAuth application in the Spotify
+   * Developer Dashboard.
    */
   hostname: string;
 
@@ -48,15 +48,16 @@ export async function startServer(opts: StartServerOptions) {
   if (typeof port !== 'number')
     throw new TypeError(`[startServer] Expected "port" to be of type "number", got "${typeof port}".`);
 
-  // Generate self-signed certificates for the configured hostname.
-  const https = await devcert.certificateFor(hostname);
-
-  // Create our server instance using the self-signed certificates we generated.
+  // Create a server instance.
   const server = Fastify({
-    https,
+    // Generate self-signed certificates for the configured hostname.
+    https: await devcert.certificateFor(hostname),
     ajv: {
       customOptions: {
         useDefaults: true,
+        // With this option set to `false` and `additionalProperties` set to
+        // `false` in schemas, Fastify will return a 400 if any unknown keys are
+        // present.
         removeAdditional: false
       }
     }
@@ -68,12 +69,6 @@ export async function startServer(opts: StartServerOptions) {
   server.get(OAUTH_CALLBACK_ROUTE, { schema: loginHandler.schema }, loginHandler);
   server.get('/logout', logoutHandler);
   server.post('/config', { schema: configHandler.schema }, configHandler);
-
-  // Register a shutdown handler.
-  adeiu(async signal => {
-    log.info(prefix, `Got signal ${log.chalk.yellow(signal)}; stopping server.`);
-    await server.close();
-  });
 
   // Start the server.
   try {

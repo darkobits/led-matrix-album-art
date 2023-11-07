@@ -1,6 +1,9 @@
+import adeiu from '@darkobits/adeiu';
 import env from '@darkobits/env';
+import sleep from '@darkobits/sleep';
 import dotenv from 'dotenv';
 import pWaitFor from 'p-wait-for';
+import pWhilst from 'p-whilst';
 
 import { CONFIG_KEYS } from 'etc/constants';
 import config from 'lib/config';
@@ -8,38 +11,59 @@ import log from 'lib/log';
 // import matrix from 'lib/matrix';
 import { startServer } from 'server';
 
+import type { SpotifyUserData } from 'etc/types';
 
-/**
- * TODO:
- * - Make the matrix update loop no-op (and clear the display) if there is no
- *   user.
- */
+
 async function main() {
   try {
     console.log();
     dotenv.config();
 
-    await startServer({
+    const server = await startServer({
       hostname: env('HOSTNAME', true),
       port: env('PORT', true)
     });
 
-    // If a user has not authenticated yet, wait to initialize the LED matrix.
-    if (!config.has(CONFIG_KEYS.SPOTIFY_USER)) {
-      log.info(log.prefix('main'), log.chalk.dim('Waiting for user authentication.'));
-      await pWaitFor(() => config.has(CONFIG_KEYS.SPOTIFY_USER));
-    }
 
-    const email = config.get(CONFIG_KEYS.SPOTIFY_USER)?.email;
-    log.info(log.prefix('main'), `Logged in as: ${log.chalk.green(email)}`);
+    // ----- Matrix ------------------------------------------------------------
 
-    // TODO: Display a test image on the LED matrix at startup.
+    let matrixActive = true;
 
-    // Start the LED matrix, but only if there is a user logged in.
+    void pWhilst(() => matrixActive, async () => {
+      log.info(log.prefix('matrix'), 'Updating matrix.');
+      // [1] Display test image here.
 
-    // matrix.clear();
+      // [2] Wait for user authentication.
+      if (!config.has(CONFIG_KEYS.SPOTIFY_USER)) {
+        // matrix.clear();
+        log.info(log.prefix('matrix'), log.chalk.dim('Waiting for user authentication.'));
+      }
 
-    log.info(log.prefix('main'), 'Ready.');
+      const currentUser = await pWaitFor(() => config.has(CONFIG_KEYS.SPOTIFY_USER))
+        .then(() => config.get(CONFIG_KEYS.SPOTIFY_USER) as SpotifyUserData);
+
+      void currentUser;
+
+      await sleep('5 seconds');
+    });
+
+
+    // ----- Miscellany --------------------------------------------------------
+
+    // Register a shutdown handler.
+    adeiu(async signal => {
+      log.info(log.prefix('main'), `Got signal ${log.chalk.yellow(signal)}; shutting down.`);
+      matrixActive = false;
+      await server.close();
+    });
+
+    // Once a user has authenticated, logs their e-mail address.
+    void pWaitFor(() => config.has(CONFIG_KEYS.SPOTIFY_USER)).then(() => {
+      const email = config.get(CONFIG_KEYS.SPOTIFY_USER)?.email;
+      log.info(log.prefix('main'), `Logged in as: ${log.chalk.green(email)}`);
+    });
+
+    setImmediate(() => log.info(log.prefix('main'), 'Ready.'));
   } catch (err: any) {
     log.error(err);
     throw err;

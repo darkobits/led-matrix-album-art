@@ -24,6 +24,7 @@
     "fastify": "^4.24.3",
     "jimp": "^0.22.10",
     "p-wait-for": "^5.0.2",
+    "p-whilst": "^3.1.0",
     "ramda": "^0.29.1",
     "rpi-led-matrix": "^1.14.0",
     "spotify-web-api-node": "^5.0.2"
