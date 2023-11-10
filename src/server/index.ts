@@ -1,11 +1,11 @@
 import Fastify from 'fastify';
+import * as R from 'ramda';
 import selfsigned, { type GenerateResult } from 'selfsigned';
 
-import {
-  OAUTH_LOGIN_ROUTE,
-  OAUTH_CALLBACK_ROUTE
-} from 'etc/constants';
+import { CONFIG_KEYS, OAUTH } from 'etc/constants';
+import config from 'lib/config';
 import log from 'lib/log';
+import { expiresInToUnixTimestamp } from 'lib/utils';
 import { configHandler } from 'server/routes/config';
 import { loginHandler } from 'server/routes/login';
 import { logoutHandler } from 'server/routes/logout';
@@ -42,19 +42,39 @@ export interface StartServerOptions {
 /**
  * @private
  *
- * Generates a self-signed certificate for the server.
+ * Checks for an existing, unexpired self-signed certificate for the provided
+ * common name. If one exists, returns it. Otherwise, generates a new
+ * certificate, persists it, and returns it.
  */
 async function generateCertificate(commonName: string) {
-  const { cert, private: key } = await new Promise<GenerateResult>((resolve, reject) => {
-    selfsigned.generate(
-      [{ name: 'commonName', value: commonName }],
-      // TODO: Increase to Infinity or something much larger.
-      { days: 365 },
-      (err, result) => (err ? reject(err) : resolve(result))
-    );
-  });
+  const certificates = config.get(CONFIG_KEYS.CERTIFICATES) ?? [];
+  let certificate = R.find(R.propEq(commonName, 'commonName'), certificates);
 
-  return { cert, key };
+  if (!certificate || Date.now() > certificate.expires) {
+    log.info(log.prefix('server'), `Generating certificate for: ${log.chalk.green(commonName)}`);
+
+    const { cert, private: key } = await new Promise<GenerateResult>((resolve, reject) => {
+      selfsigned.generate(
+        [{ name: 'commonName', value: commonName }],
+        { days: 365 },
+        (err, result) => (err ? reject(err) : resolve(result))
+      );
+    });
+
+    certificate = {
+      commonName,
+      cert,
+      key,
+      expires: expiresInToUnixTimestamp(365 * 24 * 60 * 60)
+    };
+
+    config.set(CONFIG_KEYS.CERTIFICATES, [
+      ...R.filter(R.propEq(commonName, 'commonName'), certificates),
+      certificate
+    ]);
+  }
+
+  return certificate;
 }
 
 
@@ -70,7 +90,6 @@ export async function startServer(opts: StartServerOptions) {
   // Create a server instance.
   const server = Fastify({
     // Generate self-signed certificates for the configured hostname.
-    // https: await devcert.certificateFor(hostname),
     https: await generateCertificate(hostname),
     ajv: {
       customOptions: {
@@ -85,8 +104,8 @@ export async function startServer(opts: StartServerOptions) {
 
   // Register route handlers.
   server.get('/', rootHandler);
-  server.get(OAUTH_LOGIN_ROUTE, { schema: loginHandler.schema }, loginHandler);
-  server.get(OAUTH_CALLBACK_ROUTE, { schema: loginHandler.schema }, loginHandler);
+  server.get(OAUTH.LOGIN_ROUTE, { schema: loginHandler.schema }, loginHandler);
+  server.get(OAUTH.CALLBACK_ROUTE, { schema: loginHandler.schema }, loginHandler);
   server.get('/logout', logoutHandler);
   server.post('/config', { schema: configHandler.schema }, configHandler);
 

@@ -1,4 +1,4 @@
-// import { getMatrix } from 'lib/matrix';
+import { getMatrix } from 'lib/matrix';
 
 import type {
   FastifyRequest,
@@ -26,28 +26,20 @@ type ConfigRequest = FastifyRequest<{
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function configHandler(request: ConfigRequest, reply: FastifyReply) {
-  // if (request.body?.brightness) {
-  //   matrix.brightness(request.body.brightness);
-  // }
+  const matrix = getMatrix();
 
-  // if (request.body?.luminanceCorrect) {
-  //   matrix.luminanceCorrect(request.body.luminanceCorrect);
-  // }
+  if (request.body?.brightness) {
+    matrix.brightness(request.body.brightness);
+  }
 
-  // const brightness = matrix.brightness();
-  // const height = matrix.height();
-  // const width = matrix.width();
-  // const luminanceCorrect = matrix.luminanceCorrect();
+  const brightness = matrix.brightness();
+  const height = matrix.height();
+  const width = matrix.width();
 
   return {
-    ok: true,
-    config: request.body
-    // matrix: {
-    //   brightness,
-    //   height,
-    //   width,
-    //   luminanceCorrect
-    // }
+    brightness,
+    height,
+    width
   };
 }
 

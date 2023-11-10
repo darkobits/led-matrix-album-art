@@ -6,9 +6,7 @@ import {
 
 import {
   CONFIG_KEYS,
-  OAUTH_LOGIN_ROUTE,
-  OAUTH_CALLBACK_ROUTE,
-  OAUTH_SCOPES
+  OAUTH
 } from 'etc/constants';
 import config from 'lib/config';
 import log from 'lib/log';
@@ -54,23 +52,23 @@ export async function loginHandler(request: LoginRequest, reply: FastifyReply) {
   // we won't know what domain we are on until a function is invoked and we have
   // an Event to introspect. However, this _must_ be set before we perform the
   // authorization flow.
-  spotifyClient.setRedirectURI(`https://${hostnameAndPort}${OAUTH_CALLBACK_ROUTE}`);
+  spotifyClient.setRedirectURI(`https://${hostnameAndPort}${OAUTH.CALLBACK_ROUTE}`);
 
 
   // ----- Handle Root Login Path ----------------------------------------------
 
-  if (path === OAUTH_LOGIN_ROUTE) {
+  if (path === OAUTH.LOGIN_ROUTE) {
     // Redirect the user to the Spotify login flow, encoding any information we
     // may need later into a 'state' param.
     const encodedState = jsonToBase64({ redirectTo });
-    const authorizationUrl = spotifyClient.createAuthorizeURL(OAUTH_SCOPES, encodedState, true);
+    const authorizationUrl = spotifyClient.createAuthorizeURL(OAUTH.SCOPES, encodedState, true);
     return reply.redirect(authorizationUrl);
   }
 
 
   // ----- Handle Authorization Callback ---------------------------------------
 
-  if (path === OAUTH_CALLBACK_ROUTE) {
+  if (path === OAUTH.CALLBACK_ROUTE) {
     // Spotify should have called this endpoint with either an authorization
     // code parameter or an error parameter describing what went wrong.
     const { code, error, state } = request.query ?? {};

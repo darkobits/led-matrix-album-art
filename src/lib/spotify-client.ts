@@ -10,10 +10,10 @@ import type { SpotifyUserData } from 'etc/types';
 
 /**
  * Creates and returns a new Spotify client with our application's credentials.
- * If a user ID hash is provided, the function will first check the in-memory
- * user data cache to see if the user's credentials are available. If not, it
- * will then check DynamoDB, attach them to the client, cache the credentials,
- * and return it.
+ * If a user email is provided, the function will first check for persisted
+ * user data to see if the user's credentials are available. If so, it will
+ * attach the user's credentials to the client. If no email is provided, an
+ * unauthenticated client will be returned.
  */
 export async function getSpotifyClient(userEmail?: string) {
   const client = new SpotifyWebApi({

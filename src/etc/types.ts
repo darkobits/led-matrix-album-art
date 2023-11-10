@@ -1,5 +1,5 @@
 /**
- * Shape of user data stored in DynamoDB.
+ * Shape of persisted user data.
  */
 export interface SpotifyUserData {
   id: string;
@@ -8,4 +8,15 @@ export interface SpotifyUserData {
   expires: number;
   refreshToken: string;
   scopes: string;
+}
+
+
+/**
+ * Shape of persisted certificate data.
+ */
+export interface CertificateData {
+  commonName: string;
+  cert: string;
+  key: string;
+  expires: number;
 }
