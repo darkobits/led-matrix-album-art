@@ -1,7 +1,7 @@
 import sleep from '@darkobits/sleep';
 
 import log from 'lib/log';
-import matrix from 'lib/matrix';
+import { getMatrix } from 'lib/matrix';
 import { imageToBuffer } from 'lib/utils';
 
 
@@ -10,6 +10,8 @@ const width = 64;
 const height = 64;
 
 export async function doMatrixUpdateLoop() {
+  const matrix = getMatrix();
+
   let errorCount = 0;
 
   log.info('init');

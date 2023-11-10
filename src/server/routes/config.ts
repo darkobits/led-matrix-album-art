@@ -1,4 +1,4 @@
-// import matrix from 'lib/matrix';
+// import { getMatrix } from 'lib/matrix';
 
 import type {
   FastifyRequest,

@@ -11,6 +11,7 @@ import {
   OAUTH_SCOPES
 } from 'etc/constants';
 import config from 'lib/config';
+import log from 'lib/log';
 import { getSpotifyClient } from 'lib/spotify-client';
 import { expiresInToUnixTimestamp } from 'lib/utils';
 
@@ -123,6 +124,7 @@ export async function loginHandler(request: LoginRequest, reply: FastifyReply) {
 
       await reply.redirect(redirectUrl);
     } catch (err: any) {
+      log.error(log.prefix('auth'), 'Error:', err);
       throw new httpError.InternalServerError(err.message);
     }
   }

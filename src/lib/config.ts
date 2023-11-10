@@ -1,3 +1,4 @@
+// import appRootPath from 'app-root-path';
 import Conf from 'conf';
 
 import { CONFIG_KEYS } from 'etc/constants';
@@ -15,8 +16,13 @@ export interface ConfigSchema {
 
 /**
  * Config instance. Used to store information for the logged-in Spotify user.
+ *
+ * As root, this will be at: /root/.config/spotify-ish-nodejs/config.json
  */
 export default new Conf<ConfigSchema>({
+  // cwd: appRootPath.toString(),
+  cwd: '/etc/spotify-ish',
+  configFileMode: 0o777,
   projectName: 'spotify-ish',
   schema: {
     [CONFIG_KEYS.SPOTIFY_USER]: {

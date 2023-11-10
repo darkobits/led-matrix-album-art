@@ -1,5 +1,5 @@
-import devcert from 'devcert';
 import Fastify from 'fastify';
+import selfsigned, { type GenerateResult } from 'selfsigned';
 
 import {
   OAUTH_LOGIN_ROUTE,
@@ -39,6 +39,25 @@ export interface StartServerOptions {
 }
 
 
+/**
+ * @private
+ *
+ * Generates a self-signed certificate for the server.
+ */
+async function generateCertificate(commonName: string) {
+  const { cert, private: key } = await new Promise<GenerateResult>((resolve, reject) => {
+    selfsigned.generate(
+      [{ name: 'commonName', value: commonName }],
+      // TODO: Increase to Infinity or something much larger.
+      { days: 365 },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+  });
+
+  return { cert, key };
+}
+
+
 export async function startServer(opts: StartServerOptions) {
   const { hostname, port } = opts ?? {};
 
@@ -51,7 +70,8 @@ export async function startServer(opts: StartServerOptions) {
   // Create a server instance.
   const server = Fastify({
     // Generate self-signed certificates for the configured hostname.
-    https: await devcert.certificateFor(hostname),
+    // https: await devcert.certificateFor(hostname),
+    https: await generateCertificate(hostname),
     ajv: {
       customOptions: {
         useDefaults: true,
@@ -72,8 +92,15 @@ export async function startServer(opts: StartServerOptions) {
 
   // Start the server.
   try {
-    await server.listen({ port });
+    await server.listen({
+      // Server should still be accessible via HTTPS on the configured hostname,
+      // this merely instructs Fastify to listen on all available interfaces.
+      host: '0.0.0.0',
+      port
+    });
+
     log.info(prefix, `Listening on: ${log.chalk.blue(`https://${hostname}:${port}`)}`);
+
     return await server;
   } catch (err: any) {
     throw new Error(log.chalk.red.bold(`Error starting server: ${err.message}`), { cause: err });
