@@ -17,7 +17,10 @@ The following steps must be completed before this software will be able to opera
 
 #### Spotify Application Setup
 
-1. Explain how to create a new Spotify app in the Developer Dashboard, what URLs to register, etc.
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Click the Create App button.
+3. Fill out the application, including specifying the precise URL that will receive redirects from the
+   OAth provider.
 
 #### Project Setup
 

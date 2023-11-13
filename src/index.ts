@@ -47,6 +47,7 @@ async function main() {
     // ----- Matrix ------------------------------------------------------------
 
     const matrix = getMatrix();
+    let delayedActionTimeout: NodeJS.Timeout;
 
     // Display test image here.
 
@@ -71,7 +72,13 @@ async function main() {
       // There may be an item in an active player, but the player is paused.
       if (!nowPlaying.is_playing) {
         log.verbose('Player is paused.');
-        return matrix.clear().sync();
+
+        delayedActionTimeout = setTimeout(() => {
+          log.verbose('Clearing display due to inactivity.');
+          matrix.clear().sync();
+        }, 5000);
+
+        return;
       }
 
       // Nothing has been playing for long enough that Spotify has cleared the
@@ -88,6 +95,9 @@ async function main() {
         log.warn('No images for current item.');
         return matrix.clear().sync();
       }
+
+      // Clear any pending delayed actions.
+      clearTimeout(delayedActionTimeout);
 
       // Use Jimp to resize the image to our desired dimensions and
       // convert it to a Buffer that we can write to the matrix.
