@@ -1,4 +1,7 @@
+// import sleep from '@darkobits/sleep';
 import Jimp from 'jimp';
+
+// import log from 'lib/log';
 
 import type { LedMatrixInstance } from 'rpi-led-matrix';
 
@@ -96,4 +99,65 @@ export function expiresInToUnixTimestamp(expiresIn: number) {
  */
 export function getArtistNames(item?: SpotifyApi.TrackObjectFull) {
   return item?.artists?.map(artist => artist.name).join(', ');
+}
+
+
+let brightnessAdjustmentInProgress = false;
+
+
+/**
+ * Gradually adjusts the brightness of the matrix over time.
+ */
+export function adjustMatrixBrightness(matrix: LedMatrixInstance, targetBrightness: number) {
+  if (brightnessAdjustmentInProgress) {
+    throw new Error('Brightness adjustment in progress. Please try again later.');
+  }
+
+  brightnessAdjustmentInProgress = true;
+
+  matrix.afterSync(() => {
+    if (brightnessAdjustmentInProgress && matrix.brightness() > targetBrightness) {
+      matrix.brightness(matrix.brightness() - 5);
+      setTimeout(() => matrix.sync(), 0);
+    } else {
+      brightnessAdjustmentInProgress = false;
+    }
+  });
+
+  matrix.sync();
+
+  // const initialBrightness = matrix.brightness();
+
+  // if (initialBrightness === targetBrightness) {
+  //   log.info(log.prefix('brightness'), `Brightness already at ${log.chalk.yellow(initialBrightness)}; no-op.`);
+  //   return;
+  // }
+
+  // log.info(log.prefix('brightness'), `Adjusting brightness from ${log.chalk.yellow(initialBrightness)} to ${log.chalk.yellow(targetBrightness)}`);
+
+  // brightnessAdjustmentInProgress = true;
+
+  // if (initialBrightness < targetBrightness) {
+  //   // Brighten.
+  //   while (matrix.brightness() < targetBrightness) {
+  //     log.info(`So just to let you know, this while loop is still running because ${matrix.brightness()} is less than ${targetBrightness}...`);
+  //     log.info(log.prefix('brightness'), matrix.brightness());
+  //     matrix.brightness(matrix.brightness() + 10).sync();
+  //     await sleep('1s');
+  //   }
+  // } else {
+  //   // Dim.
+  //   while (matrix.brightness() > targetBrightness) {
+  //     log.info(`So just to let you know, this while loop is still running because ${matrix.brightness()} is greater than ${targetBrightness}...`);
+  //     matrix.brightness(matrix.brightness() - 10).sync();
+  //     await sleep('1s');
+  //   }
+  // }
+
+  // // Correct for any remaining difference in brightness.
+  // matrix.brightness(targetBrightness).sync();
+
+  // brightnessAdjustmentInProgress = false;
+
+  // log.info(log.prefix('brightness'), 'Done adjusting brightness.');
 }

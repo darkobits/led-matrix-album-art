@@ -32,7 +32,7 @@ export function getMatrix() {
         // disableHardwarePulsing: true
       }, {
         ...LedMatrix.defaultRuntimeOptions(),
-        gpioSlowdown: 3,
+        gpioSlowdown: env('MATRIX_GPIO_SLOWDOWN', true),
         doGpioInit: true
       });
     }
@@ -88,4 +88,55 @@ export function getMatrix() {
 
 
   return proxy;
+}
+
+
+// ----- Miscellany ------------------------------------------------------------
+
+class Pulser {
+  constructor(readonly x: number, readonly y: number, readonly f: number) {}
+
+  nextColor(t: number): number {
+    /** You could easily work position-dependent logic into this expression */
+    const brightness = 0xFF & Math.max(0, 255 * Math.sin(this.f * t / 1000));
+
+    return brightness << 16 | brightness << 8 | brightness;
+  }
+}
+
+
+export function pulserTest() {
+  const matrix = getMatrix();
+  const pulsers: Array<Pulser> = [];
+
+  for (let x = 0; x < matrix.width(); x += 1) {
+    for (let y = 0; y < matrix.height(); y += 1) {
+      pulsers.push(new Pulser(x, y, 5 * Math.random()));
+    }
+  }
+
+  let mode: 'up' | 'down' = 'down';
+
+  matrix.afterSync((mat, dt, t) => {
+    pulsers.forEach(pulser => {
+      matrix.fgColor(pulser.nextColor(t)).setPixel(pulser.x, pulser.y);
+    });
+
+    if (matrix.brightness() === 100) {
+      mode = 'down';
+    } else if (matrix.brightness() === 0) {
+      mode = 'up';
+    }
+
+    if (mode === 'down') {
+      matrix.brightness(matrix.brightness() - 1);
+    } else {
+      matrix.brightness(matrix.brightness() + 1);
+    }
+
+    // Why?
+    setTimeout(() => matrix.sync(), 0);
+  });
+
+  matrix.sync();
 }

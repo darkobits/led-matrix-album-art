@@ -17,14 +17,14 @@ import { imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
 
 
-async function main() {
+dotenv.config({
+  override: true,
+  path: path.resolve(rootPath.toString(), '.env')
+});
+
+
+export async function main() {
   try {
-    dotenv.config({
-      override: true,
-      path: path.resolve(rootPath.toString(), '.env')
-    });
-
-
     // ----- Preflight Checks --------------------------------------------------
 
     if (process.getuid) {
@@ -57,11 +57,6 @@ async function main() {
      * and if we should be calling sync() in a setImmediate() per the docs.
      */
     const artworkUpdateCron = Cron.interval('2 seconds', async () => {
-      // const timestamp = log.chalk.dim(
-      //   new Date().toLocaleString().replace(', ', ' ')
-      // );
-      // log.info(log.prefix('matrix'), timestamp, 'Updating.');
-
       const currentUser = config.get(CONFIG_KEYS.SPOTIFY_USER);
       if (!currentUser) return;
 
@@ -107,7 +102,9 @@ async function main() {
         height: matrixHeight
       });
 
-      matrix.drawBuffer(imgBuffer).sync();
+      matrix.drawBuffer(imgBuffer);
+
+      setTimeout(() => matrix.sync(), 0);
     });
 
 
@@ -183,3 +180,4 @@ async function main() {
 
 
 void main();
+// void pulserTest();
