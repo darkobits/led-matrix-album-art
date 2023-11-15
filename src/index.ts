@@ -13,6 +13,7 @@ import events from 'lib/events';
 import log from 'lib/log';
 import { getMatrix } from 'lib/matrix';
 import { getSpotifyClient } from 'lib/spotify-client';
+import { getCurrentBrightness } from 'lib/suncalc';
 import { imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
 
@@ -37,6 +38,8 @@ export async function main() {
     const port = env<number>('PORT', true);
     const matrixWidth = env<number>('MATRIX_WIDTH', true);
     const matrixHeight = env<number>('MATRIX_HEIGHT', true);
+    const latitude = env<number>('LATITUDE', true);
+    const longitude = env<number>('LONGITUDE', true);
 
 
     // ----- Server ------------------------------------------------------------
@@ -57,8 +60,22 @@ export async function main() {
      * and if we should be calling sync() in a setImmediate() per the docs.
      */
     const artworkUpdateCron = Cron.interval('2 seconds', async () => {
+      // ----- [1] Adjust Matrix Brightness ------------------------------------
+
+      const targetBrightness = getCurrentBrightness(latitude, longitude);
+
+      if (matrix.brightness() !== targetBrightness) {
+        matrix.brightness(targetBrightness).sync();
+      }
+
+
+      // ----- [2] Get Current Spotify User ------------------------------------
+
       const currentUser = config.get(CONFIG_KEYS.SPOTIFY_USER);
       if (!currentUser) return;
+
+
+      // ----- [3] Get Currently Playing Item ----------------------------------
 
       const spotifyClient = await getSpotifyClient(currentUser?.email);
       const nowPlaying = (await spotifyClient.getMyCurrentPlayingTrack()).body;
@@ -83,6 +100,9 @@ export async function main() {
         return matrix.clear().sync();
       }
 
+
+      // ----- [4] Get Artwork For Current Item --------------------------------
+
       const images = item.type === 'track' ? item.album.images : item.images;
       const largestImage = R.last(R.sortBy(R.propOr(0, 'height'), images));
 
@@ -90,6 +110,9 @@ export async function main() {
         log.warn('No images for current item.');
         return matrix.clear().sync();
       }
+
+
+      // ----- [5] Write Artwork to Matrix -------------------------------------
 
       // Clear any pending delayed actions.
       clearTimeout(delayedActionTimeout);

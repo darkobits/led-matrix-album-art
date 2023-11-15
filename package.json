@@ -28,7 +28,8 @@
     "ramda": "^0.29.1",
     "rpi-led-matrix": "^1.14.0",
     "selfsigned": "^2.4.1",
-    "spotify-web-api-node": "^5.0.2"
+    "spotify-web-api-node": "^5.0.2",
+    "suncalc": "^1.9.0"
   },
   "devDependencies": {
     "@darkobits/conventional-changelog-preset": "^0.1.0",
@@ -42,6 +43,7 @@
     "@types/ramda": "^0.29.7",
     "@types/selfsigned": "^2.0.4",
     "@types/spotify-web-api-node": "^5.0.9",
+    "@types/suncalc": "^1.9.2",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "@vitest/coverage-v8": "^0.34.6",

@@ -18,76 +18,88 @@ import log from 'lib/log';
 let matrix: LedMatrixInstance;
 
 
-export function getMatrix() {
-  try {
-    if (!matrix) {
-      matrix = new LedMatrix({
-        ...LedMatrix.defaultMatrixOptions(),
-        hardwareMapping: GpioMapping.AdafruitHatPwm,
-        rows: env('MATRIX_WIDTH', true),
-        cols: env('MATRIX_HEIGHT', true),
-        limitRefreshRateHz: 60,
-        brightness: 100
-        // Re-enable this if we experience issues with the snd_bcm2835 module.
-        // disableHardwarePulsing: true
-      }, {
-        ...LedMatrix.defaultRuntimeOptions(),
-        gpioSlowdown: env('MATRIX_GPIO_SLOWDOWN', true),
-        doGpioInit: true
-      });
+/**
+ * Used as a proxy for an LedMatrixInstance in cases where a matrix is not
+ * connected.
+ */
+class LedMatrixProxy {
+  #brightness = 100;
+  #width = env<number>('MATRIX_WIDTH', true);
+  #height = env<number>('MATRIX_HEIGHT', true);
+
+  clear() {
+    return this;
+  }
+
+  drawBuffer() {
+    return this;
+  }
+
+  sync() {
+    return this;
+  }
+
+  brightness(newValue?: number) {
+    if (typeof newValue !== 'undefined') {
+      this.#brightness = newValue;
+      return this;
     }
 
-    return matrix;
+    return this.#brightness;
+  }
+
+  width(newValue?: number) {
+    if (typeof newValue !== 'undefined') {
+      this.#width = newValue;
+      return this;
+    }
+
+    return this.#width;
+  }
+
+  height(newValue?: number) {
+    if (typeof newValue !== 'undefined') {
+      this.#height = newValue;
+      return this;
+    }
+
+    return this.#height;
+  }
+}
+
+
+/**
+ * Returns a singleton `LedMatrixInstance` or `LedMatrixProxy`.
+ */
+export function getMatrix() {
+  if (matrix) return matrix;
+
+  try {
+    matrix = new LedMatrix({
+      ...LedMatrix.defaultMatrixOptions(),
+      hardwareMapping: GpioMapping.AdafruitHatPwm,
+      rows: env('MATRIX_WIDTH', true),
+      cols: env('MATRIX_HEIGHT', true),
+      limitRefreshRateHz: 60,
+      brightness: 100
+      // Re-enable this if we experience issues with the snd_bcm2835 module.
+      // disableHardwarePulsing: true
+    }, {
+      ...LedMatrix.defaultRuntimeOptions(),
+      gpioSlowdown: env('MATRIX_GPIO_SLOWDOWN', true),
+      doGpioInit: true
+    });
   } catch (err: any) {
     if (err.message?.includes('is not a function')) {
-      // log.warn(log.prefix('matrix'), 'Using proxy for matrix.');
+      // @ts-expect-error
+      matrix = new LedMatrixProxy();
     } else {
       log.error(log.prefix('matrix'), 'Error initializing matrix:', err);
+      throw err;
     }
   }
 
-  let brightness = 100;
-  let width = env<number>('MATRIX_WIDTH', true);
-  let height = env<number>('MATRIX_HEIGHT', true);
-
-  const proxy = {
-    clear: () => {
-      return proxy;
-    },
-    drawBuffer: () => {
-      return proxy;
-    },
-    sync: () => {
-      return proxy;
-    },
-    brightness: (newValue?: number) => {
-      if (typeof newValue !== 'undefined') {
-        brightness = newValue;
-        return proxy;
-      }
-
-      return brightness;
-    },
-    width: (newValue?: number) => {
-      if (typeof newValue !== 'undefined') {
-        width = newValue;
-        return proxy;
-      }
-
-      return width;
-    },
-    height: (newValue?: number) => {
-      if (typeof newValue !== 'undefined') {
-        height = newValue;
-        return proxy;
-      }
-
-      return height;
-    }
-  } as unknown as LedMatrixInstance;
-
-
-  return proxy;
+  return matrix;
 }
 
 

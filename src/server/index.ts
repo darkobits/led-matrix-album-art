@@ -107,6 +107,7 @@ export async function startServer(opts: StartServerOptions) {
   server.get(OAUTH.LOGIN_ROUTE, { schema: loginHandler.schema }, loginHandler);
   server.get(OAUTH.CALLBACK_ROUTE, { schema: loginHandler.schema }, loginHandler);
   server.get('/logout', logoutHandler);
+  server.get('/config', configHandler);
   server.post('/config', { schema: configHandler.schema }, configHandler);
 
   // Start the server.

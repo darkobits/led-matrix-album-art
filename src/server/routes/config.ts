@@ -28,7 +28,8 @@ type ConfigRequest = FastifyRequest<{
 export function configHandler(request: ConfigRequest, reply: FastifyReply) {
   const matrix = getMatrix();
 
-  if (typeof request.body?.brightness === 'number') {
+  // Handle updating matrix configuration if request is a POST.
+  if (request.method === 'POST' && typeof request.body?.brightness === 'number') {
     matrix.brightness(request.body.brightness);
   }
 
