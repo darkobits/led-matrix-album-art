@@ -24,6 +24,9 @@ dotenv.config({
 });
 
 
+log.info('CURRENT DIRECTORY:', process.cwd());
+
+
 export async function main() {
   try {
     // ----- Preflight Checks --------------------------------------------------
