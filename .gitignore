@@ -90,6 +90,6 @@ typings/
 .next
 
 # Build artifacts
-/dist
+# /dist
 
 /NOTES.md
