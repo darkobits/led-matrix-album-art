@@ -23,7 +23,7 @@ const phasesToBrightness: Record<string, number> = {
   // Sunrise End: Bottom edge of the Sun touches the horizon.
   sunriseEnd: 80,
   // Golden Hour End: Soft light, best time for photography ends.
-  goldenHourEnd: 90,
+  goldenHourEnd: 100,
   // Solar Noon: Sun is in the highest position.
   solarNoon: 100,
   // Golden Hour: Evening golden hour starts.
