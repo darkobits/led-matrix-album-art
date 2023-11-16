@@ -27,6 +27,7 @@ export async function rootHandler(request: FastifyRequest, reply: FastifyReply) 
     return {
       user: currentUser.email,
       nowPlaying: item ? {
+        state: nowPlaying.is_playing ? 'playing' : 'paused',
         artist: getArtistNames(item),
         title: item.name,
         image: largestImage?.url
