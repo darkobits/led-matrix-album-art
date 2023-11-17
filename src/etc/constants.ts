@@ -1,3 +1,10 @@
+export const DEFAULTS = {
+  HOSTNAME: 'localhost',
+  PORT: 443,
+  GPIO_SLOWDOWN: 3
+} as const;
+
+
 /**
  * OAuth parameters for authenticating with Spotify.
  */

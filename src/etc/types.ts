@@ -1,3 +1,6 @@
+import type { MatrixOptions, RuntimeOptions } from 'rpi-led-matrix';
+
+
 /**
  * Shape of persisted user data.
  */
@@ -19,4 +22,37 @@ export interface CertificateData {
   cert: string;
   key: string;
   expires: number;
+}
+
+
+/**
+ * Shape of the object provided by Saffron representing a parsed configuration
+ * file and/or CLI arguments.
+ */
+export interface CLIArguments {
+  /**
+   * Default: localhost
+   */
+  hostname: string;
+  /**
+   * Default: 443
+   */
+  port: number;
+
+  clientId: string;
+
+  clientSecret: string;
+
+  width: MatrixOptions['cols'];
+
+  height: MatrixOptions['rows'];
+
+  /**
+   * Default: 3
+   */
+  gpioSlowdown: RuntimeOptions['gpioSlowdown'];
+
+  latitude?: number | undefined;
+
+  longitude?: number | undefined;
 }

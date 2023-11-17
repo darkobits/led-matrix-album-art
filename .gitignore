@@ -93,3 +93,5 @@ typings/
 /dist
 
 /NOTES.md
+
+/spotify.config.ts

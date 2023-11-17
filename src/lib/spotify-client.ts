@@ -1,4 +1,3 @@
-import env from '@darkobits/env';
 import SpotifyWebApi from 'spotify-web-api-node';
 
 import { CONFIG_KEYS } from 'etc/constants';
@@ -6,6 +5,25 @@ import config from 'lib/config';
 import { expiresInToUnixTimestamp } from 'lib/utils';
 
 import type { SpotifyUserData } from 'etc/types';
+
+
+export interface SpotifyClientOptions {
+  clientId: string;
+  clientSecret: string;
+}
+
+
+let clientId: string;
+let clientSecret: string;
+
+
+/**
+ * Sets credentials for the Spotify application.
+ */
+export function initSpotifyClient(options: SpotifyClientOptions) {
+  clientId = options.clientId;
+  clientSecret = options.clientSecret;
+}
 
 
 /**
@@ -16,9 +34,11 @@ import type { SpotifyUserData } from 'etc/types';
  * unauthenticated client will be returned.
  */
 export async function getSpotifyClient(userEmail?: string) {
+  if (!clientId || !clientSecret) throw new Error('Spotify client has not been initialized.');
+
   const client = new SpotifyWebApi({
-    clientId: env('SPOTIFY_CLIENT_ID', true),
-    clientSecret: env('SPOTIFY_CLIENT_SECRET', true)
+    clientId: clientId,
+    clientSecret: clientSecret
   });
 
   // Return an unauthorized client if no userIdHash was provided.

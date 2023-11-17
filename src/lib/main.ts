@@ -1,35 +1,34 @@
-import path from 'node:path';
-
 import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
-import env from '@darkobits/env';
-import rootPath from 'app-root-path';
-import dotenv from 'dotenv';
+// import env from '@darkobits/env';
+// import rootPath from 'app-root-path';
 import * as R from 'ramda';
 
 import { CONFIG_KEYS } from 'etc/constants';
 import config from 'lib/config';
 import events from 'lib/events';
 import log from 'lib/log';
-import { getMatrix } from 'lib/matrix';
-import { getSpotifyClient } from 'lib/spotify-client';
+import { initMatrix } from 'lib/matrix';
+import { initSpotifyClient, getSpotifyClient } from 'lib/spotify-client';
 import { getCurrentBrightness } from 'lib/suncalc';
 import { imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
 
 
-dotenv.config({
-  override: true,
-  path: path.resolve(rootPath.toString(), '.env')
-});
+import type { CLIArguments } from 'etc/types';
 
 
-log.info('CURRENT DIRECTORY:', process.cwd());
+// dotenv.config({
+//   override: true,
+//   path: path.resolve(rootPath.toString(), '.env')
+// });
 
 
-export async function main() {
+export default async function main(context: CLIArguments) {
   try {
     // ----- Preflight Checks --------------------------------------------------
+
+    log.info(log.prefix('pwd'), process.cwd());
 
     if (process.getuid) {
       const uid = process.getuid();
@@ -37,12 +36,12 @@ export async function main() {
     }
 
     // These will throw if the indicated environment variable is not set.
-    const hostname = env('HOSTNAME', true);
-    const port = env<number>('PORT', true);
-    const matrixWidth = env<number>('MATRIX_WIDTH', true);
-    const matrixHeight = env<number>('MATRIX_HEIGHT', true);
-    const latitude = env<number>('LATITUDE', true);
-    const longitude = env<number>('LONGITUDE', true);
+    const hostname = context.hostname;
+    const port = context.port;
+    const matrixWidth = context.width;
+    const matrixHeight = context.height;
+    const latitude = context.latitude;
+    const longitude = context.longitude;
 
 
     // ----- Server ------------------------------------------------------------
@@ -52,11 +51,26 @@ export async function main() {
 
     // ----- Matrix ------------------------------------------------------------
 
-    const matrix = getMatrix();
+    const matrix = initMatrix({
+      rows: matrixHeight,
+      cols: matrixWidth,
+      gpioSlowdown: context.gpioSlowdown
+    });
+
     let delayedActionTimeout: NodeJS.Timeout;
 
-    // Display test image here.
+    // Display test image here?
 
+
+    // ----- Spotify Client ----------------------------------------------------
+
+    initSpotifyClient({
+      clientId: context.clientId,
+      clientSecret: context.clientSecret
+    });
+
+
+    // ----- Artwork Update Loop -----------------------------------------------
 
     /**
      * TODO: Investigate whether we need to call sync() when clearing the matrix
@@ -65,10 +79,12 @@ export async function main() {
     const artworkUpdateCron = Cron.interval('2 seconds', async () => {
       // ----- [1] Adjust Matrix Brightness ------------------------------------
 
-      const targetBrightness = getCurrentBrightness(latitude, longitude);
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        const targetBrightness = getCurrentBrightness(latitude, longitude);
 
-      if (matrix.brightness() !== targetBrightness) {
-        matrix.brightness(targetBrightness).sync();
+        if (matrix.brightness() !== targetBrightness) {
+          matrix.brightness(targetBrightness).sync();
+        }
       }
 
 
@@ -203,7 +219,3 @@ export async function main() {
     throw err;
   }
 }
-
-
-void main();
-// void pulserTest();

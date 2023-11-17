@@ -1,11 +1,19 @@
-import env from '@darkobits/env';
 import {
   LedMatrix,
   GpioMapping,
-  type LedMatrixInstance
+  type LedMatrixInstance,
+  type MatrixOptions,
+  type RuntimeOptions
 } from 'rpi-led-matrix';
 
 import log from 'lib/log';
+
+
+export interface GetMatrixOptions {
+  rows: MatrixOptions['rows'];
+  cols: MatrixOptions['cols'];
+  gpioSlowdown: RuntimeOptions['gpioSlowdown'];
+}
 
 
 /**
@@ -24,8 +32,13 @@ let matrix: LedMatrixInstance;
  */
 class LedMatrixProxy {
   #brightness = 100;
-  #width = env<number>('MATRIX_WIDTH', true);
-  #height = env<number>('MATRIX_HEIGHT', true);
+  #width;
+  #height;
+
+  constructor(options: GetMatrixOptions) {
+    this.#width = options.cols;
+    this.#height = options.rows;
+  }
 
   clear() {
     return this;
@@ -48,7 +61,7 @@ class LedMatrixProxy {
     return this.#brightness;
   }
 
-  width(newValue?: number) {
+  width(newValue?: MatrixOptions['cols']) {
     if (typeof newValue !== 'undefined') {
       this.#width = newValue;
       return this;
@@ -57,7 +70,7 @@ class LedMatrixProxy {
     return this.#width;
   }
 
-  height(newValue?: number) {
+  height(newValue?: MatrixOptions['rows']) {
     if (typeof newValue !== 'undefined') {
       this.#height = newValue;
       return this;
@@ -71,34 +84,39 @@ class LedMatrixProxy {
 /**
  * Returns a singleton `LedMatrixInstance` or `LedMatrixProxy`.
  */
-export function getMatrix() {
+export function initMatrix(options: GetMatrixOptions) {
   if (matrix) return matrix;
 
   try {
     matrix = new LedMatrix({
       ...LedMatrix.defaultMatrixOptions(),
       hardwareMapping: GpioMapping.AdafruitHatPwm,
-      rows: env('MATRIX_WIDTH', true),
-      cols: env('MATRIX_HEIGHT', true),
+      rows: options.rows,
+      cols: options.cols,
       limitRefreshRateHz: 60,
       brightness: 100
       // Re-enable this if we experience issues with the snd_bcm2835 module.
       // disableHardwarePulsing: true
     }, {
       ...LedMatrix.defaultRuntimeOptions(),
-      gpioSlowdown: env('MATRIX_GPIO_SLOWDOWN', true),
+      gpioSlowdown: options.gpioSlowdown,
       doGpioInit: true
     });
   } catch (err: any) {
     if (err.message?.includes('is not a function')) {
-      // @ts-expect-error
-      matrix = new LedMatrixProxy();
+      matrix = new LedMatrixProxy(options) as unknown as LedMatrixInstance;
     } else {
       log.error(log.prefix('matrix'), 'Error initializing matrix:', err);
       throw err;
     }
   }
 
+  return matrix;
+}
+
+
+export function getMatrix() {
+  if (!matrix) throw new Error('Matrix is not initialized.');
   return matrix;
 }
 
@@ -117,8 +135,8 @@ class Pulser {
 }
 
 
-export function pulserTest() {
-  const matrix = getMatrix();
+export function pulserTest(options: GetMatrixOptions) {
+  const matrix = initMatrix(options);
   const pulsers: Array<Pulser> = [];
 
   for (let x = 0; x < matrix.width(); x += 1) {
