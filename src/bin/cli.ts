@@ -22,13 +22,13 @@ cli.command<CLIArguments>({
     command.option('hostname', {
       group:  log.chalk.bold('Server:'),
       type: 'string',
-      description: `Hostname that will be used to generate self-signed certificates and OAuth redirect URLs. Default: ${DEFAULTS.HOSTNAME}`
+      description: `Used for self-signed certificates and OAuth redirect URL. Default: ${DEFAULTS.HOSTNAME}`
     });
 
     command.option('port', {
       group:  log.chalk.bold('Server:'),
       type: 'number',
-      description: `Port that the server will listen on. Used to generate OAuth redirect URLs. Default: ${DEFAULTS.PORT}`
+      description: `Port to listen on. Default: ${DEFAULTS.PORT}`
     });
 
     command.option('clientId', {
@@ -77,6 +77,11 @@ cli.command<CLIArguments>({
       group: log.chalk.bold('Matrix:'),
       type: 'number',
       description: 'Used for auto-dimming of the matrix based on sun position.',
+      required: false
+    });
+
+    command.option('config', {
+      description: 'Provide an explicit path to a configuration file.',
       required: false
     });
   },
