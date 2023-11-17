@@ -22,15 +22,13 @@ cli.command<CLIArguments>({
     command.option('hostname', {
       group:  log.chalk.bold('Server:'),
       type: 'string',
-      description: 'Hostname that will be used to generate self-signed certificates and OAuth redirect URLs.',
-      default: DEFAULTS.HOSTNAME
+      description: `Hostname that will be used to generate self-signed certificates and OAuth redirect URLs. Default: ${DEFAULTS.HOSTNAME}`
     });
 
     command.option('port', {
       group:  log.chalk.bold('Server:'),
       type: 'number',
-      description: 'Port that the server will listen on. Used to generate OAuth redirect URLs.',
-      default: DEFAULTS.PORT
+      description: `Port that the server will listen on. Used to generate OAuth redirect URLs. Default: ${DEFAULTS.PORT}`
     });
 
     command.option('clientId', {
@@ -64,9 +62,8 @@ cli.command<CLIArguments>({
     command.option('gpioSlowdown', {
       group:  log.chalk.bold('Matrix:'),
       type: 'number',
-      description: 'How much to slow down I/O to the matrix.',
-      required: false,
-      default: DEFAULTS.GPIO_SLOWDOWN
+      description: `How much to slow down I/O to the matrix. Default: ${DEFAULTS.GPIO_SLOWDOWN}`,
+      required: false
     });
 
     command.option('latitude', {
@@ -83,11 +80,34 @@ cli.command<CLIArguments>({
       required: false
     });
   },
-  handler: async ({ argv, config /* , configIsEmpty, configPath */ }) => {
+  handler: async ({ argv /* , config , configIsEmpty, configPath */ }) => {
     try {
-      log.info('argv', argv);
-      log.info('config', config);
-      await main(argv);
+      // Apply defaults here rather than using the `default` option in the
+      // command builder. If that approach is used, a default value will
+      // override a value provided via a configuration file.
+      const {
+        hostname = DEFAULTS.HOSTNAME,
+        port = DEFAULTS.PORT,
+        clientId,
+        clientSecret,
+        width,
+        height,
+        gpioSlowdown = DEFAULTS.GPIO_SLOWDOWN,
+        latitude,
+        longitude
+      } = argv;
+
+      await main({
+        hostname,
+        port,
+        clientId,
+        clientSecret,
+        width,
+        height,
+        gpioSlowdown,
+        latitude,
+        longitude
+      });
     } catch (err: any) {
       log.error();
       process.exit(err?.exitCode ?? err?.code ?? 1);

@@ -36,25 +36,28 @@ export default async function main(context: CLIArguments) {
     }
 
     // These will throw if the indicated environment variable is not set.
-    const hostname = context.hostname;
-    const port = context.port;
-    const matrixWidth = context.width;
-    const matrixHeight = context.height;
-    const latitude = context.latitude;
-    const longitude = context.longitude;
+    // const hostname = context.hostname ?? DEFAULTS.HOSTNAME;
+    // const port = context.port ?? DEFAULTS.PORT;
+    // const matrixWidth = context.width;
+    // const matrixHeight = context.height;
+    // const gpioSlowdown = context.gpioSlowdown ?? DEFAULTS.GPIO_SLOWDOWN;
+    // const latitude = context.latitude;
+    // const longitude = context.longitude;
 
 
     // ----- Server ------------------------------------------------------------
 
+    const { hostname, port } = context;
     const server = await startServer({ hostname, port });
 
 
     // ----- Matrix ------------------------------------------------------------
 
+    const { width, height, gpioSlowdown } = context;
     const matrix = initMatrix({
-      rows: matrixHeight,
-      cols: matrixWidth,
-      gpioSlowdown: context.gpioSlowdown
+      rows: height,
+      cols: width,
+      gpioSlowdown
     });
 
     let delayedActionTimeout: NodeJS.Timeout;
@@ -64,13 +67,13 @@ export default async function main(context: CLIArguments) {
 
     // ----- Spotify Client ----------------------------------------------------
 
-    initSpotifyClient({
-      clientId: context.clientId,
-      clientSecret: context.clientSecret
-    });
+    const { clientId, clientSecret } = context;
+    initSpotifyClient({ clientId, clientSecret });
 
 
     // ----- Artwork Update Loop -----------------------------------------------
+
+    const { latitude, longitude } = context;
 
     /**
      * TODO: Investigate whether we need to call sync() when clearing the matrix
@@ -138,11 +141,8 @@ export default async function main(context: CLIArguments) {
 
       // Use Jimp to resize the image to our desired dimensions and
       // convert it to a Buffer that we can write to the matrix.
-      const imgBuffer = await imageToBuffer({
-        src: largestImage.url,
-        width: matrixWidth,
-        height: matrixHeight
-      });
+      const src = largestImage.url;
+      const imgBuffer = await imageToBuffer({ src, width, height });
 
       matrix.drawBuffer(imgBuffer);
 

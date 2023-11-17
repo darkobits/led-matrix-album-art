@@ -34,6 +34,7 @@ export interface CLIArguments {
    * Default: localhost
    */
   hostname: string;
+
   /**
    * Default: 443
    */
