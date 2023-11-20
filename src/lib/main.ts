@@ -1,9 +1,8 @@
 import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
-// import rootPath from 'app-root-path';
 import * as R from 'ramda';
 
-import { CONFIG_KEYS } from 'etc/constants';
+import { ARTWORK_POLLING_INTERVAL, CONFIG_KEYS } from 'etc/constants';
 import config from 'lib/config';
 import events from 'lib/events';
 import log from 'lib/log';
@@ -67,13 +66,13 @@ export default async function main(context: CLIArguments) {
     initSpotifyClient({ clientId, clientSecret });
 
 
-    // ----- Artwork Update Loop -----------------------------------------------
+    // ----- Artwork Update Cron -----------------------------------------------
 
     /**
      * TODO: Investigate whether we need to call sync() when clearing the matrix
      * and if we should be calling sync() in a setImmediate() per the docs.
      */
-    const artworkUpdateCron = Cron.interval('2 seconds', async () => {
+    const artworkUpdateCron = Cron.interval(ARTWORK_POLLING_INTERVAL, async () => {
       // ----- [1] Adjust Matrix Brightness ------------------------------------
 
       if (typeof latitude === 'number' && typeof longitude === 'number') {

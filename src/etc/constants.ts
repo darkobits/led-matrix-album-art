@@ -1,3 +1,12 @@
+/**
+ * How often to poll the Spotify API for the currently playing item.
+ */
+export const ARTWORK_POLLING_INTERVAL = '1 second' as const;
+
+
+/**
+ * Default values for configuration values / CLI arguments.
+ */
 export const DEFAULTS = {
   HOSTNAME: 'localhost',
   PORT: 443,
@@ -33,11 +42,11 @@ export const OAUTH = {
 
 
 /**
- * Various common keys in our configuration store.
+ * Common keys in the application's persisted configuration store.
  */
 export const CONFIG_KEYS = {
   /**
-   * Stores a SpotifyUserData object for the currently logged-in Spotify user.
+   * Stores a `SpotifyUserData` object for the currently logged-in Spotify user.
    */
   SPOTIFY_USER: 'spotify-user',
 
