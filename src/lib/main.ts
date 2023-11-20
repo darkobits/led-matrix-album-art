@@ -1,6 +1,5 @@
 import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
-// import env from '@darkobits/env';
 // import rootPath from 'app-root-path';
 import * as R from 'ramda';
 
@@ -11,38 +10,35 @@ import log from 'lib/log';
 import { initMatrix } from 'lib/matrix';
 import { initSpotifyClient, getSpotifyClient } from 'lib/spotify-client';
 import { getCurrentBrightness } from 'lib/suncalc';
-import { imageToBuffer } from 'lib/utils';
+import { geocodeLocation, imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
 
-
 import type { CLIArguments } from 'etc/types';
-
-
-// dotenv.config({
-//   override: true,
-//   path: path.resolve(rootPath.toString(), '.env')
-// });
 
 
 export default async function main(context: CLIArguments) {
   try {
     // ----- Preflight Checks --------------------------------------------------
 
-    log.info(log.prefix('pwd'), process.cwd());
-
     if (process.getuid) {
       const uid = process.getuid();
       if (uid !== 0) log.warn(`Process not run with ${log.chalk.bold('sudo')}; unexpected errors may occur.`);
     }
 
-    // These will throw if the indicated environment variable is not set.
-    // const hostname = context.hostname ?? DEFAULTS.HOSTNAME;
-    // const port = context.port ?? DEFAULTS.PORT;
-    // const matrixWidth = context.width;
-    // const matrixHeight = context.height;
-    // const gpioSlowdown = context.gpioSlowdown ?? DEFAULTS.GPIO_SLOWDOWN;
-    // const latitude = context.latitude;
-    // const longitude = context.longitude;
+    log.info(log.prefix('main'), 'pwd', log.chalk.green(process.cwd()));
+    log.info(log.prefix('main'), 'Using config store:', log.chalk.green(config.path));
+
+
+    // ----- Location ----------------------------------------------------------
+
+    const { location } = context;
+    const { latitude, longitude, formattedAddress } = await geocodeLocation(location);
+
+    if (formattedAddress) {
+      log.info(log.prefix('main'), 'Using location:',  log.chalk.green(formattedAddress));
+    } else {
+      log.info(log.prefix('main'), log.chalk.gray('Location services disabled.'));
+    }
 
 
     // ----- Server ------------------------------------------------------------
@@ -72,8 +68,6 @@ export default async function main(context: CLIArguments) {
 
 
     // ----- Artwork Update Loop -----------------------------------------------
-
-    const { latitude, longitude } = context;
 
     /**
      * TODO: Investigate whether we need to call sync() when clearing the matrix
@@ -118,7 +112,7 @@ export default async function main(context: CLIArguments) {
       // Nothing has been playing for long enough that Spotify has cleared the
       // current item.
       if (!item) {
-        log.verbose('Nothing is playing.');
+        log.verbose(log.prefix('main'), 'Nothing is playing.');
         return matrix.clear().sync();
       }
 
@@ -153,17 +147,17 @@ export default async function main(context: CLIArguments) {
     // ----- Event Handlers ----------------------------------------------------
 
     artworkUpdateCron.on('start', () => {
-      log.info(log.prefix('matrix'), log.chalk.green('Updates started.'));
+      log.info(log.prefix('artwork'), log.chalk.green('Updates started.'));
     });
 
 
     artworkUpdateCron.on('suspend', () => {
-      log.info(log.prefix('matrix'), log.chalk.dim('Updates suspended.'));
+      log.info(log.prefix('artwork'), log.chalk.dim('Updates suspended.'));
     });
 
 
     artworkUpdateCron.on('error', err => {
-      log.error(log.prefix('matrix'), 'Error updating matrix:', err);
+      log.error(log.prefix('artwork'), 'Error updating artwork:', err);
 
       if (err instanceof AggregateError) {
         err.errors.forEach(err => log.error(err.message));
@@ -172,7 +166,7 @@ export default async function main(context: CLIArguments) {
 
     // When a user authenticates, start the matrix cron.
     events.on('user-logged-in', user => {
-      log.info(log.prefix('main'), `Logged in as: ${log.chalk.green(user.email)}`);
+      log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
       void artworkUpdateCron.start();
     });
 
@@ -195,12 +189,14 @@ export default async function main(context: CLIArguments) {
     // If we're starting with no user, log a message but do not start the matrix
     // cron. The above event handlers will take care of starting it if/when a
     // user authenticates. Otherwise, start the cron immediately.
-    if (!config.has(CONFIG_KEYS.SPOTIFY_USER)) {
+    const user = config.get(CONFIG_KEYS.SPOTIFY_USER);
+
+    if (!user) {
       log.info(log.prefix('main'), log.chalk.gray('Waiting for user authentication.'));
     } else {
+      log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
       await artworkUpdateCron.start();
     }
-
 
     // Register a shutdown handler.
     adeiu(async signal => {

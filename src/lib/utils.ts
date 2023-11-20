@@ -1,7 +1,6 @@
-// import sleep from '@darkobits/sleep';
 import Jimp from 'jimp';
+import Geocoder from 'node-geocoder';
 
-// import log from 'lib/log';
 
 import type { LedMatrixInstance } from 'rpi-led-matrix';
 
@@ -160,4 +159,23 @@ export function adjustMatrixBrightness(matrix: LedMatrixInstance, targetBrightne
   // brightnessAdjustmentInProgress = false;
 
   // log.info(log.prefix('brightness'), 'Done adjusting brightness.');
+}
+
+
+export async function geocodeLocation(query: string | undefined) {
+  const nullResult = {
+    formattedAddress: undefined,
+    latitude: undefined,
+    longitude: undefined
+  };
+
+  if (!query) return nullResult;
+
+  const coder = Geocoder({ provider: 'openstreetmap' });
+  const results = await coder.geocode(query);
+  const location = results[0];
+
+  if (!location.longitude || !location.latitude) return nullResult;
+
+  return location;
 }

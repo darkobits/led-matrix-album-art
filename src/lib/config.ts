@@ -4,8 +4,8 @@ import { CONFIG_KEYS } from 'etc/constants';
 import events from 'lib/events';
 
 import type {
-  SpotifyUserData,
-  CertificateData
+  CertificateData,
+  SpotifyUserData
 } from 'etc/types';
 
 

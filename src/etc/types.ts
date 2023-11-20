@@ -53,7 +53,9 @@ export interface CLIArguments {
    */
   gpioSlowdown: RuntimeOptions['gpioSlowdown'];
 
-  latitude?: number | undefined;
-
-  longitude?: number | undefined;
+  /**
+   * String describing the device's location. Used to automatically dim the
+   * matrix based on the sun's position.
+   */
+  location?: string | undefined;
 }

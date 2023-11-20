@@ -35,28 +35,28 @@ cli.command<CLIArguments>({
       group:  log.chalk.bold('Spotify:'),
       type: 'string',
       description: 'Spotify application client ID.',
-      required: true
+      required: false
     });
 
     command.option('clientSecret', {
       group:  log.chalk.bold('Spotify:'),
       type: 'string',
       description: 'Spotify application client secret.',
-      required: true
+      required: false
     });
 
     command.option('width', {
       group:  log.chalk.bold('Matrix:'),
       type: 'number',
       description: 'Width of the LED matrix.',
-      required: true
+      required: false
     });
 
     command.option('height', {
       group:  log.chalk.bold('Matrix:'),
       type: 'number',
       description: 'Height of the LED matrix.',
-      required: true
+      required: false
     });
 
     command.option('gpioSlowdown', {
@@ -66,22 +66,10 @@ cli.command<CLIArguments>({
       required: false
     });
 
-    command.option('latitude', {
-      group:  log.chalk.bold('Matrix:'),
-      type: 'number',
-      description: 'Used for auto-dimming of the matrix based on sun position.',
-      required: false
-    });
-
-    command.option('longitude', {
-      group: log.chalk.bold('Matrix:'),
-      type: 'number',
-      description: 'Used for auto-dimming of the matrix based on sun position.',
-      required: false
-    });
-
-    command.option('config', {
-      description: 'Provide an explicit path to a configuration file.',
+    command.option('location', {
+      group:  log.chalk.bold('Other:'),
+      type: 'string',
+      description: 'Used to automatically dim the matrix based on sun position.',
       required: false
     });
   },
@@ -89,7 +77,8 @@ cli.command<CLIArguments>({
     try {
       // Apply defaults here rather than using the `default` option in the
       // command builder. If that approach is used, a default value will
-      // override a value provided via a configuration file.
+      // override a value provided via a configuration file because Saffron
+      // prioritizes CLI arguments (even defaults) over configuration files.
       const {
         hostname = DEFAULTS.HOSTNAME,
         port = DEFAULTS.PORT,
@@ -98,8 +87,7 @@ cli.command<CLIArguments>({
         width,
         height,
         gpioSlowdown = DEFAULTS.GPIO_SLOWDOWN,
-        latitude,
-        longitude
+        location
       } = argv;
 
       await main({
@@ -110,15 +98,22 @@ cli.command<CLIArguments>({
         width,
         height,
         gpioSlowdown,
-        latitude,
-        longitude
+        location
       });
     } catch (err: any) {
-      log.error();
+      log.error(err);
       process.exit(err?.exitCode ?? err?.code ?? 1);
     }
   }
 });
 
 
-cli.init();
+cli.init(() => {
+  return (err, argv, output) => {
+    if (err) {
+      log.error(log.chalk.red.bold(err.message));
+    } else {
+      console.error(output);
+    }
+  };
+});
