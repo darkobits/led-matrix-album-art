@@ -68,6 +68,9 @@ export default async function main(context: CLIArguments) {
 
     // ----- Artwork Update Cron -----------------------------------------------
 
+    let currentDevice: SpotifyApi.CurrentlyPlayingObject['device'];
+
+
     /**
      * TODO: Investigate whether we need to call sync() when clearing the matrix
      * and if we should be calling sync() in a setImmediate() per the docs.
@@ -93,11 +96,18 @@ export default async function main(context: CLIArguments) {
       // ----- [3] Get Currently Playing Item ----------------------------------
 
       const spotifyClient = await getSpotifyClient(currentUser?.email);
-      const nowPlaying = (await spotifyClient.getMyCurrentPlayingTrack()).body;
-      const item = nowPlaying.item;
+      const playbackState = (await spotifyClient.getMyCurrentPlaybackState()).body;
+
+      // Device ish.
+      if (!currentDevice || currentDevice.id !== playbackState.device.id) {
+        currentDevice = playbackState.device;
+        log.info(log.prefix('device'), 'Playing on:', log.chalk.yellow(currentDevice.name));
+      }
+
+      const item = playbackState.item;
 
       // There may be an item in an active player, but the player is paused.
-      if (!nowPlaying.is_playing) {
+      if (!playbackState.is_playing) {
         log.verbose('Player is paused.');
 
         delayedActionTimeout = setTimeout(() => {
