@@ -79,7 +79,7 @@ export default async function main(context: CLIArguments) {
 
     let inactivityTimeout: NodeJS.Timeout;
     let currentItemId: string | undefined;
-    let currentDevice: SpotifyApi.CurrentlyPlayingObject['device'];
+    let currentDevice: SpotifyApi.CurrentlyPlayingObject['device'] | undefined;
 
 
     /**
@@ -112,7 +112,9 @@ export default async function main(context: CLIArguments) {
       const item = playbackState.item;
 
       // Device ish.
-      if (!currentDevice || currentDevice.id !== playbackState.device.id) {
+      if (!playbackState.device) {
+        currentDevice = undefined;
+      } else if (!currentDevice || currentDevice.id !== playbackState.device.id) {
         currentDevice = playbackState.device;
         log.info(log.prefix('device'), 'ID:', log.chalk.yellow(currentDevice.id));
         log.info(log.prefix('device'), 'Name:', log.chalk.yellow(currentDevice.name));
