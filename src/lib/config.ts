@@ -58,15 +58,17 @@ const conf = new Conf<ConfigSchema>({
 
 /**
  * Emit logged-in / logged-out events when user data changes.
+ *
+ * N.B. When a key is first set, oldValue will be undefined. When a key is
+ * deleted, newValue will be undefined.
  */
-conf.onDidChange('spotify-user', (newValue, oldValue) => {
-  // When a key is first set, oldValue will be undefined.
-  // When a key is deleted, newValue will be undefined.
-
-  if (newValue) {
-    void events.emit('user-logged-in', newValue);
+conf.onDidChange('spotify-user', (newUser, oldUser) => {
+  if (newUser) {
+    if (!oldUser || newUser.id !== oldUser.id) {
+      void events.emit('user-logged-in', newUser);
+    }
   } else {
-    void events.emit('user-logged-out', oldValue);
+    void events.emit('user-logged-out', oldUser);
   }
 });
 

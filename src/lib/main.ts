@@ -2,7 +2,11 @@ import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
 import * as R from 'ramda';
 
-import { ARTWORK_POLLING_INTERVAL, CONFIG_KEYS } from 'etc/constants';
+import {
+  ARTWORK_POLLING_INTERVAL,
+  INACTIVITY_TIMEOUT,
+  CONFIG_KEYS
+} from 'etc/constants';
 import config from 'lib/config';
 import events from 'lib/events';
 import log from 'lib/log';
@@ -55,10 +59,7 @@ export default async function main(context: CLIArguments) {
       gpioSlowdown
     });
 
-    let delayedActionTimeout: NodeJS.Timeout;
-
     // Display test image here?
-
 
     // ----- Spotify Client ----------------------------------------------------
 
@@ -68,6 +69,8 @@ export default async function main(context: CLIArguments) {
 
     // ----- Artwork Update Cron -----------------------------------------------
 
+    let inactivityTimeout: NodeJS.Timeout;
+    let currentItemId: string | undefined;
     let currentDevice: SpotifyApi.CurrentlyPlayingObject['device'];
 
 
@@ -87,33 +90,36 @@ export default async function main(context: CLIArguments) {
       }
 
 
-      // ----- [2] Get Current Spotify User ------------------------------------
+      // ----- [2] Get Authenticated Client ------------------------------------
 
       const currentUser = config.get(CONFIG_KEYS.SPOTIFY_USER);
       if (!currentUser) return;
 
-
-      // ----- [3] Get Currently Playing Item ----------------------------------
-
       const spotifyClient = await getSpotifyClient(currentUser?.email);
+
+
+      // ----- [3] Get Playback State ------------------------------------------
+
       const playbackState = (await spotifyClient.getMyCurrentPlaybackState()).body;
+      const item = playbackState.item;
 
       // Device ish.
       if (!currentDevice || currentDevice.id !== playbackState.device.id) {
         currentDevice = playbackState.device;
-        log.info(log.prefix('device'), 'Playing on:', log.chalk.yellow(currentDevice.name));
+        log.info(log.prefix('device'), 'ID:', log.chalk.yellow(currentDevice.id));
+        log.info(log.prefix('device'), 'Name:', log.chalk.yellow(currentDevice.name));
       }
-
-      const item = playbackState.item;
 
       // There may be an item in an active player, but the player is paused.
       if (!playbackState.is_playing) {
         log.verbose('Player is paused.');
 
-        delayedActionTimeout = setTimeout(() => {
-          log.verbose('Clearing display due to inactivity.');
+        currentItemId = undefined;
+
+        inactivityTimeout = setTimeout(() => {
+          log.verbose(log.prefix('main'), 'Clearing matrix due to inactivity.');
           matrix.clear().sync();
-        }, 5000);
+        }, INACTIVITY_TIMEOUT);
 
         return;
       }
@@ -121,35 +127,38 @@ export default async function main(context: CLIArguments) {
       // Nothing has been playing for long enough that Spotify has cleared the
       // current item.
       if (!item) {
-        log.verbose(log.prefix('main'), 'Nothing is playing.');
-        return matrix.clear().sync();
+        log.verbose(log.prefix('main'), 'Nothing is playing; clearing matrix.');
+        currentItemId = undefined;
+        matrix.clear().sync();
+        return;
       }
 
-
-      // ----- [4] Get Artwork For Current Item --------------------------------
+      // Item has not changed since last update; bail.
+      if (item.id === currentItemId) return;
 
       const images = item.type === 'track' ? item.album.images : item.images;
       const largestImage = R.last(R.sortBy(R.propOr(0, 'height'), images));
 
+      // Currently playing item has no artwork. This is likely a very rare event
+      // but we should handle it anyway.
       if (!largestImage) {
-        log.warn('No images for current item.');
-        return matrix.clear().sync();
+        log.warn(log.prefix('main'), 'No images for current item.');
+        matrix.clear().sync();
+        return;
       }
 
 
-      // ----- [5] Write Artwork to Matrix -------------------------------------
+      // ----- [4] Write Artwork to Matrix -------------------------------------
 
-      // Clear any pending delayed actions.
-      clearTimeout(delayedActionTimeout);
+      // Cancel the inactivity timeout, if needed.
+      clearTimeout(inactivityTimeout);
 
       // Use Jimp to resize the image to our desired dimensions and
       // convert it to a Buffer that we can write to the matrix.
       const src = largestImage.url;
       const imgBuffer = await imageToBuffer({ src, width, height });
 
-      matrix.drawBuffer(imgBuffer);
-
-      setTimeout(() => matrix.sync(), 0);
+      matrix.drawBuffer(imgBuffer).sync();
     });
 
 

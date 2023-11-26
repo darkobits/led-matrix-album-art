@@ -1,7 +1,16 @@
+import ms from 'ms';
+
+
 /**
  * How often to poll the Spotify API for the currently playing item.
  */
 export const ARTWORK_POLLING_INTERVAL = '1 second' as const;
+
+
+/**
+ * How long to wait after playback is paused before clearing the matrix.
+ */
+export const INACTIVITY_TIMEOUT = ms('5 seconds');
 
 
 /**
