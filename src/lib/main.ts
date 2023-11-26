@@ -1,5 +1,6 @@
 import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
+import pWaitFor from 'p-wait-for';
 import * as R from 'ramda';
 
 import spotifyLogo from 'assets/spotify-logo.png';
@@ -25,6 +26,8 @@ export default async function main(context: CLIArguments) {
   try {
     // ----- Preflight Checks --------------------------------------------------
 
+    const startTime = Date.now();
+
     if (process.getuid) {
       const uid = process.getuid();
       if (uid !== 0) log.warn(`Process not run with ${log.chalk.bold('sudo')}; unexpected errors may occur.`);
@@ -32,6 +35,24 @@ export default async function main(context: CLIArguments) {
 
     log.info(log.prefix('main'), 'pwd', log.chalk.green(process.cwd()));
     log.info(log.prefix('main'), 'Using config store:', log.chalk.green(config.path));
+
+
+    // ----- Matrix ------------------------------------------------------------
+
+    const { width, height, gpioSlowdown } = context;
+
+    const matrix = initMatrix({
+      rows: height,
+      cols: width,
+      gpioSlowdown
+    });
+
+    // Draw startup image.
+    matrix.drawBuffer(await imageToBuffer({
+      src: Buffer.from(spotifyLogo.split(',')[1], 'base64'),
+      width,
+      height
+    })).sync();
 
 
     // ----- Location ----------------------------------------------------------
@@ -50,23 +71,6 @@ export default async function main(context: CLIArguments) {
 
     const { hostname, port } = context;
     const server = await startServer({ hostname, port });
-
-
-    // ----- Matrix ------------------------------------------------------------
-
-    const { width, height, gpioSlowdown } = context;
-
-    const matrix = initMatrix({
-      rows: height,
-      cols: width,
-      gpioSlowdown
-    });
-
-    matrix.drawBuffer(await imageToBuffer({
-      src: Buffer.from(spotifyLogo.split(',')[1], 'base64'),
-      width,
-      height
-    })).sync();
 
 
     // ----- Spotify Client ----------------------------------------------------
@@ -214,18 +218,6 @@ export default async function main(context: CLIArguments) {
 
     // ----- Miscellany / Init -------------------------------------------------
 
-    // If we're starting with no user, log a message but do not start the matrix
-    // cron. The above event handlers will take care of starting it if/when a
-    // user authenticates. Otherwise, start the cron immediately.
-    const user = config.get(CONFIG_KEYS.SPOTIFY_USER);
-
-    if (!user) {
-      log.info(log.prefix('main'), log.chalk.gray('Waiting for user authentication.'));
-    } else {
-      log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
-      await artworkUpdateCron.start();
-    }
-
     // Register a shutdown handler.
     adeiu(async signal => {
       log.info(log.prefix('main'), `Got signal ${log.chalk.yellow(signal)}; shutting down.`);
@@ -236,6 +228,21 @@ export default async function main(context: CLIArguments) {
       ]);
     });
 
+
+    // If we're starting with no user, log a message but do not start the matrix
+    // cron. The above event handlers will take care of starting it if/when a
+    // user authenticates. Otherwise, start the cron immediately.
+    await pWaitFor(() => Date.now() - startTime >= 5000).then(() => {
+      matrix.clear().sync();
+      const user = config.get(CONFIG_KEYS.SPOTIFY_USER);
+
+      if (user) {
+        log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
+        return artworkUpdateCron.start();
+      }
+
+      log.info(log.prefix('main'), log.chalk.gray('Waiting for user authentication.'));
+    });
 
     log.info(log.prefix('main'), log.chalk.green('Ready.'));
   } catch (err: any) {
