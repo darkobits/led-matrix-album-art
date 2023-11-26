@@ -2,6 +2,7 @@ import adeiu from '@darkobits/adeiu';
 import Cron from '@darkobits/cron';
 import * as R from 'ramda';
 
+import spotifyLogo from 'assets/spotify-logo.png';
 import {
   ARTWORK_POLLING_INTERVAL,
   INACTIVITY_TIMEOUT,
@@ -15,6 +16,7 @@ import { initSpotifyClient, getSpotifyClient } from 'lib/spotify-client';
 import { getCurrentBrightness } from 'lib/suncalc';
 import { geocodeLocation, imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
+
 
 import type { CLIArguments } from 'etc/types';
 
@@ -53,13 +55,19 @@ export default async function main(context: CLIArguments) {
     // ----- Matrix ------------------------------------------------------------
 
     const { width, height, gpioSlowdown } = context;
+
     const matrix = initMatrix({
       rows: height,
       cols: width,
       gpioSlowdown
     });
 
-    // Display test image here?
+    matrix.drawBuffer(await imageToBuffer({
+      src: Buffer.from(spotifyLogo.split(',')[1], 'base64'),
+      width,
+      height
+    }));
+
 
     // ----- Spotify Client ----------------------------------------------------
 

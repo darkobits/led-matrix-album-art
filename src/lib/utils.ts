@@ -38,15 +38,15 @@ export function drawTestPattern(matrix: LedMatrixInstance) {
 
 
 export interface ImageToBufferOptions {
-  src: string;
+  src: string | Buffer;
   width: number;
   height: number;
 }
 
 
 /**
- * Provided a path or URL for an image and desired output dimensions, returns a
- * Buffer that can be passed to the `LedMatrix#drawBuffer`.
+ * Provided a path, URL, or base 64-encoded image and desired output dimensions,
+ * returns a Buffer that can be passed to `LedMatrix#drawBuffer`.
  */
 export async function imageToBuffer({ src, width, height }: ImageToBufferOptions) {
   if (!src) throw new Error('[imageToBuffer] No "src" provided.');
@@ -57,7 +57,8 @@ export async function imageToBuffer({ src, width, height }: ImageToBufferOptions
 
   const rgbArray: Array<number> = [];
 
-  const img = await Jimp.read(src);
+  // Make TypeScript happy.
+  const img = typeof src === 'string' ? await Jimp.read(src) : await Jimp.read(src);
 
   // If we get an image back that is 1px by 1px, that typically means nothing is
   // playing. In such cases, return a matrix of black pixels.
