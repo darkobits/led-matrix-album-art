@@ -66,7 +66,7 @@ export default async function main(context: CLIArguments) {
       src: Buffer.from(spotifyLogo.split(',')[1], 'base64'),
       width,
       height
-    }));
+    })).sync();
 
 
     // ----- Spotify Client ----------------------------------------------------
