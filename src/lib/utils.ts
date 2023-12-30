@@ -1,8 +1,17 @@
 import Jimp from 'jimp';
 import Geocoder from 'node-geocoder';
+import * as publicIpPkg from 'public-ip';
 
+import log from 'lib/log';
 
+import type { IpApiResponse } from 'etc/types';
 import type { LedMatrixInstance } from 'rpi-led-matrix';
+
+
+/**
+ * This package doesn't work with ESM named imports; use destructuring instead.
+ */
+const { publicIpv4 } = publicIpPkg;
 
 
 /**
@@ -163,12 +172,25 @@ export function adjustMatrixBrightness(matrix: LedMatrixInstance, targetBrightne
 }
 
 
-export async function geocodeLocation(query: string | undefined) {
-  const nullResult = {
-    formattedAddress: undefined,
-    latitude: undefined,
-    longitude: undefined
-  };
+export interface GeocodeResult {
+  formattedLocation: string | undefined;
+  latitude: number | undefined;
+  longitude: number | undefined;
+}
+
+
+const nullResult: GeocodeResult = Object.freeze({
+  formattedLocation: undefined,
+  latitude: undefined,
+  longitude: undefined
+});
+
+
+/**
+ * Provided a query, returns a `GeocodeResult` using Open Street Maps.
+ */
+export async function geocodeLocation(query: string | undefined): Promise<GeocodeResult> {
+  log.verbose(log.prefix('geocodeLocation'), 'Query:', query);
 
   if (!query) return nullResult;
 
@@ -176,7 +198,57 @@ export async function geocodeLocation(query: string | undefined) {
   const results = await coder.geocode(query);
   const location = results[0];
 
-  if (!location.longitude || !location.latitude) return nullResult;
+  log.verbose(log.prefix('geocodeLocation'), 'Result:', location);
 
-  return location;
+  const { formattedAddress: formattedLocation, latitude, longitude } = location;
+
+  if (!longitude || !latitude) return nullResult;
+
+  return { formattedLocation, latitude, longitude } as GeocodeResult;
+}
+
+
+/**
+ * Returns the public IP address of the machine. This function will wait no more
+ * than 2 seconds before resolving with `undefined`.
+ */
+export async function getPublicIpAddress() {
+  return Promise.race([
+    publicIpv4(),
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), 2000))
+  ]);
+}
+
+
+/**
+ * Provided an IPV4/IPV6 address, returns a `GeocodeResult` using IP-API.
+ */
+export async function geocodeIp(ipAddress: string | undefined): Promise<GeocodeResult> {
+  log.verbose(log.prefix('geocodeIp'), 'IP:', log.chalk.green(ipAddress));
+
+  if (!ipAddress) return nullResult;
+
+  const fields = [
+    'status',
+    'city',
+    'regionName',
+    'country',
+    'lat',
+    'lon'
+  ];
+
+  const response = await fetch(`http://ip-api.com/json/${ipAddress}?fields=${fields.join(',')}`);
+  const location = await response.json() as IpApiResponse;
+
+  log.verbose(log.prefix('geocodeIp'), 'Result:', location);
+
+  const { status, lat: latitude, lon: longitude } = location;
+
+  if (status !== 'success' || !latitude || !longitude) return nullResult;
+
+  const { city, regionName, country } = location;
+  const formattedLocation =  [city, regionName, country].join(', ');
+
+  return { formattedLocation, latitude, longitude } as GeocodeResult;
 }

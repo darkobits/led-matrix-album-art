@@ -1,3 +1,6 @@
+import path from 'node:path';
+
+import appRootPath from 'app-root-path';
 import Conf from 'conf';
 
 import { CONFIG_KEYS } from 'etc/constants';
@@ -17,6 +20,11 @@ export interface ConfigSchema {
   [CONFIG_KEYS.CERTIFICATES]?: Array<CertificateData>;
 }
 
+/**
+ * Path where persisted configuration data will be stored.
+ */
+const CONFIG_DIR = path.join(appRootPath.toString(), '.conf');
+
 
 /**
  * Config instance. Used to store information for the logged-in Spotify user.
@@ -25,7 +33,7 @@ const conf = new Conf<ConfigSchema>({
   // Set this to a sane-ish location. Otherwise, when run as root, config will
   // be saved to /root/.config, which cannot be reliably written to / read from
   // even when the process is started with sudo.
-  cwd: '/etc/spotify-ish',
+  cwd: CONFIG_DIR,
   configFileMode: 0o777,
   projectName: 'spotify-ish',
   schema: {

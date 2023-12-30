@@ -15,9 +15,8 @@ import log from 'lib/log';
 import { initMatrix } from 'lib/matrix';
 import { initSpotifyClient, getSpotifyClient } from 'lib/spotify-client';
 import { getCurrentBrightness } from 'lib/suncalc';
-import { geocodeLocation, imageToBuffer } from 'lib/utils';
+import { getPublicIpAddress, geocodeIp, geocodeLocation, imageToBuffer } from 'lib/utils';
 import { startServer } from 'server';
-
 
 import type { CLIArguments } from 'etc/types';
 
@@ -58,10 +57,15 @@ export default async function main(context: CLIArguments) {
     // ----- Location ----------------------------------------------------------
 
     const { location } = context;
-    const { latitude, longitude, formattedAddress } = await geocodeLocation(location);
 
-    if (formattedAddress) {
-      log.info(log.prefix('main'), 'Using location:',  log.chalk.green(formattedAddress));
+    // Use an explicit location for geocoding if one was provided in config.
+    // Otherwise, geocode using our public IP address.
+    const { formattedLocation, latitude, longitude } = location
+      ? await geocodeLocation(location)
+      : await geocodeIp(await getPublicIpAddress());
+
+    if (formattedLocation) {
+      log.info(log.prefix('main'), 'Using location:',  log.chalk.green(formattedLocation));
     } else {
       log.info(log.prefix('main'), log.chalk.gray('Location services disabled.'));
     }
@@ -120,8 +124,8 @@ export default async function main(context: CLIArguments) {
         currentDevice = undefined;
       } else if (!currentDevice || currentDevice.id !== playbackState.device.id) {
         currentDevice = playbackState.device;
+        log.info(log.prefix('device'), 'Name:', log.chalk.green(currentDevice.name));
         log.info(log.prefix('device'), 'ID:', log.chalk.yellow(currentDevice.id));
-        log.info(log.prefix('device'), 'Name:', log.chalk.yellow(currentDevice.name));
       }
 
       // There may be an item in an active player, but the player is paused.
@@ -229,22 +233,21 @@ export default async function main(context: CLIArguments) {
     });
 
 
-    // If we're starting with no user, log a message but do not start the matrix
-    // cron. The above event handlers will take care of starting it if/when a
-    // user authenticates. Otherwise, start the cron immediately.
-    await pWaitFor(() => Date.now() - startTime >= 5000).then(() => {
-      matrix.clear().sync();
-      const user = config.get(CONFIG_KEYS.SPOTIFY_USER);
-
-      if (user) {
-        log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
-        return artworkUpdateCron.start();
-      }
-
-      log.info(log.prefix('main'), log.chalk.gray('Waiting for user authentication.'));
-    });
+    const user = config.get(CONFIG_KEYS.SPOTIFY_USER);
+    if (user) log.info(log.prefix('main'), 'User:', log.chalk.green(user.email));
 
     log.info(log.prefix('main'), log.chalk.green('Ready.'));
+
+    // If we're starting with no user, log a message but do not start the matrix
+    // cron. The above event handlers will take care of starting it if/when a
+    // user authenticates. Otherwise, start the cron immediately. In both cases,
+    // give all preflight tasks a minimum of 5 seconds to complete, during
+    // which time the startup logo should be visible on the matrix.
+    await pWaitFor(() => Date.now() - startTime >= 5000).then(() => {
+      matrix.clear().sync();
+      if (config.get(CONFIG_KEYS.SPOTIFY_USER)) return artworkUpdateCron.start();
+      log.info(log.prefix('main'), log.chalk.gray('Waiting for user authentication.'));
+    });
   } catch (err: any) {
     log.error(err);
     throw err;

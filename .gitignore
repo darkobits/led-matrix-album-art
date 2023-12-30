@@ -89,6 +89,9 @@ typings/
 # next.js build output
 .next
 
+# Persisted app data.
+/.conf
+
 # Build artifacts
 /dist
 

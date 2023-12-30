@@ -11,6 +11,7 @@ import { loginHandler } from 'server/routes/login';
 import { logoutHandler } from 'server/routes/logout';
 import { rootHandler } from 'server/routes/root';
 
+import type { CertificateData } from 'etc/types';
 
 /**
  * @private
@@ -47,7 +48,7 @@ export interface StartServerOptions {
  * certificate, persists it, and returns it.
  */
 async function generateCertificate(commonName: string) {
-  const certificates = config.get(CONFIG_KEYS.CERTIFICATES) ?? [];
+  const certificates: Array<CertificateData> = config.get(CONFIG_KEYS.CERTIFICATES) ?? [];
   let certificate = R.find(R.propEq(commonName, 'commonName'), certificates);
 
   if (!certificate || Date.now() > certificate.expires) {

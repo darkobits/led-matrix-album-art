@@ -2,6 +2,29 @@ import type { MatrixOptions, RuntimeOptions } from 'rpi-led-matrix';
 
 
 /**
+ * Shape of the objects we get from the ip-api service.
+ *
+ * See: https://ip-api.com
+ */
+export interface IpApiResponse {
+  query: string;
+  status: 'success';
+  country: string;
+  countryCode: string;
+  region: string;
+  regionName: string;
+  city: string;
+  zip: string;
+  lat: number;
+  lon: number;
+  timezone: string;
+  isp: string;
+  org: string;
+  as: string;
+}
+
+
+/**
  * Shape of persisted user data.
  */
 export interface SpotifyUserData {
