@@ -9,8 +9,9 @@
   "bin": "dist/bin/cli.js",
   "main": "dist/lib/main.js",
   "scripts": {
-    "build": "nr build",
+    "build": "vite build",
     "start": "nr start",
+    "prepare": "vite build",
     "help": "nr --scripts"
   },
   "dependencies": {
@@ -36,35 +37,12 @@
     "suncalc": "^1.9.0"
   },
   "devDependencies": {
-    "@darkobits/conventional-changelog-preset": "^0.1.0",
-    "@darkobits/eslint-plugin": "^0.5.4",
-    "@darkobits/nr": "^0.16.4",
-    "@darkobits/semantic-release-config": "^0.1.1",
-    "@darkobits/ts": "0.20.2",
-    "@eslint/js": "^8.55.0",
+    "@darkobits/ts": "^0.20.2",
     "@types/ms": "^0.7.34",
-    "@types/node": "~20.10.4",
     "@types/node-geocoder": "^4.2.6",
     "@types/ramda": "^0.29.9",
     "@types/selfsigned": "^2.0.4",
     "@types/spotify-web-api-node": "^5.0.11",
-    "@types/suncalc": "^1.9.2",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
-    "@vitest/coverage-v8": "^1.0.4",
-    "@vitest/ui": "^1.0.4",
-    "eslint": "^8.55.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-unicorn": "^49.0.0",
-    "nodemon": "^3.0.2",
-    "npm-check-updates": "^16.14.11",
-    "standard-version": "^9.5.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.8",
-    "vitest": "^1.0.4"
+    "@types/suncalc": "^1.9.2"
   }
 }
